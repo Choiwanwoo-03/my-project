@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local notes / docs, not for the repo
+/docs/
+
+# local Claude Code config
+/.claude/
