@@ -125,13 +125,13 @@ export default async function Home({
         </div>
       )}
 
-      <form action="/" method="GET" className="mb-6 flex gap-2">
+      <form action="/" method="GET" className="mb-6 flex flex-wrap gap-2">
         <input
           type="text"
           name="q"
           defaultValue={query}
           placeholder="앨범명 또는 아티스트로 검색"
-          className="flex-1 max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          className="flex-1 min-w-[160px] sm:max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
         />
         <button
           type="submit"
