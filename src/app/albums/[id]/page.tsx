@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { mockAlbums } from "@/data/mock-albums";
+import { getAlbumById } from "@/lib/albums";
 import { gradientFor } from "@/lib/gradient";
 import { STATUS_STYLES } from "@/lib/status-styles";
 import StarRating from "@/components/StarRating";
+import DeleteAlbumButton from "@/components/DeleteAlbumButton";
 
-export default function AlbumDetailPage({ params }: { params: { id: string } }) {
-  const album = mockAlbums.find((a) => a.id === params.id);
+export default async function AlbumDetailPage({ params }: { params: { id: string } }) {
+  const album = await getAlbumById(params.id);
 
   if (!album) {
     notFound();
@@ -51,20 +52,14 @@ export default function AlbumDetailPage({ params }: { params: { id: string } }) 
           </dl>
 
           <div className="mt-4 flex gap-2">
-            <button
-              disabled
-              className="rounded-lg border border-gray-300 text-gray-400 text-sm font-medium px-4 py-2 cursor-not-allowed"
+            <Link
+              href={`/albums/${album.id}/edit`}
+              className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
             >
               수정
-            </button>
-            <button
-              disabled
-              className="rounded-lg border border-red-200 text-red-300 text-sm font-medium px-4 py-2 cursor-not-allowed"
-            >
-              삭제
-            </button>
+            </Link>
+            <DeleteAlbumButton albumId={album.id} />
           </div>
-          <p className="mt-2 text-xs text-gray-400">* 수정 · 삭제는 2단계에서 구현</p>
         </div>
       </div>
     </main>
