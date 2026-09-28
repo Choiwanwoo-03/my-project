@@ -18,6 +18,7 @@ export default function DeleteAlbumButton({ albumId }: { albumId: string }) {
     }
 
     router.push("/");
+    router.refresh();
   }
 
   if (confirming) {
