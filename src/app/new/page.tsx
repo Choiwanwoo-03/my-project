@@ -12,10 +12,23 @@ export default function NewAlbumPage() {
   const [rating, setRating] = useState("5");
   const [status, setStatus] = useState<AlbumStatus>("듣는중");
   const [genre, setGenre] = useState("");
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // MongoDB 연결 전이라 실제 저장은 아직 하지 않는다.
+    setError("");
+
+    const res = await fetch("/api/albums", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, artist, releaseDate, rating, status, genre }),
+    });
+
+    if (!res.ok) {
+      setError("저장에 실패했습니다. 다시 시도해 주세요.");
+      return;
+    }
+
     router.push("/");
   }
 
@@ -103,6 +116,8 @@ export default function NewAlbumPage() {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
           </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
             <button
