@@ -47,6 +47,7 @@ export default function NewAlbumPage() {
     }
 
     router.push("/");
+    router.refresh();
   }
 
   return (

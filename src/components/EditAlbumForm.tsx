@@ -47,6 +47,7 @@ export default function EditAlbumForm({ album }: { album: Album }) {
     }
 
     router.push(`/albums/${album.id}`);
+    router.refresh();
   }
 
   return (
