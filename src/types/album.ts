@@ -8,4 +8,5 @@ export interface Album {
   rating: number;
   status: AlbumStatus;
   genre?: string;
+  coverImageUrl?: string;
 }

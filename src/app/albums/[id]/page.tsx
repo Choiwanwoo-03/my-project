@@ -20,7 +20,16 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
       </Link>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-8">
-        <div className={`aspect-square rounded-xl bg-gradient-to-b ${gradientFor(album.id)}`} />
+        {album.coverImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={album.coverImageUrl}
+            alt={album.title}
+            className="aspect-square w-full rounded-xl object-cover"
+          />
+        ) : (
+          <div className={`aspect-square rounded-xl bg-gradient-to-b ${gradientFor(album.id)}`} />
+        )}
 
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{album.title}</h1>

@@ -22,5 +22,6 @@ export async function getAlbumById(id: string): Promise<Album | null> {
     rating: doc.rating,
     status: doc.status,
     genre: doc.genre,
+    coverImageUrl: doc.coverImageUrl,
   };
 }
