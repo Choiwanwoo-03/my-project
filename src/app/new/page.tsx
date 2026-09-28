@@ -46,8 +46,9 @@ export default function NewAlbumPage() {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
+    // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
+    window.location.href = "/";
   }
 
   return (

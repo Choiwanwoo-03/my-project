@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export default function DeleteAlbumButton({ albumId }: { albumId: string }) {
-  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,8 +15,9 @@ export default function DeleteAlbumButton({ albumId }: { albumId: string }) {
       return;
     }
 
-    router.push("/");
-    router.refresh();
+    // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
+    // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
+    window.location.href = "/";
   }
 
   if (confirming) {
