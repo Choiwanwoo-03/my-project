@@ -4,7 +4,7 @@ import { AlbumStatus } from "@/types/album";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { title, artist, releaseDate, rating, status, genre } = body;
+  const { title, artist, releaseDate, rating, status, genre, coverImageUrl } = body;
 
   if (!title || !artist || !rating || !status) {
     return NextResponse.json(
@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     rating: Number(rating),
     status: status as AlbumStatus,
     genre: genre || "",
+    coverImageUrl: coverImageUrl || "",
   });
 
   return NextResponse.json({ id: result.insertedId }, { status: 201 });

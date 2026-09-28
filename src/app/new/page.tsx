@@ -12,16 +12,33 @@ export default function NewAlbumPage() {
   const [rating, setRating] = useState("5");
   const [status, setStatus] = useState<AlbumStatus>("듣는중");
   const [genre, setGenre] = useState("");
+  const [coverImage, setCoverImage] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
+    let coverImageUrl = "";
+    if (coverImage) {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", coverImage);
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+      setUploading(false);
+
+      if (!uploadRes.ok) {
+        setError("이미지 업로드에 실패했습니다.");
+        return;
+      }
+      ({ url: coverImageUrl } = await uploadRes.json());
+    }
+
     const res = await fetch("/api/albums", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, status, genre }),
+      body: JSON.stringify({ title, artist, releaseDate, rating, status, genre, coverImageUrl }),
     });
 
     if (!res.ok) {
@@ -117,6 +134,18 @@ export default function NewAlbumPage() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              커버 이미지 <span className="text-gray-400">(선택)</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setCoverImage(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-gray-700"
+            />
+          </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
@@ -129,9 +158,10 @@ export default function NewAlbumPage() {
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2 hover:bg-indigo-700 transition-colors"
+              disabled={uploading}
+              className="rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2 hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              저장
+              {uploading ? "업로드 중..." : "저장"}
             </button>
           </div>
         </form>

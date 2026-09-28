@@ -12,7 +12,7 @@ export async function PUT(
   }
 
   const body = await request.json();
-  const { title, artist, releaseDate, rating, status, genre } = body;
+  const { title, artist, releaseDate, rating, status, genre, coverImageUrl } = body;
 
   if (!title || !artist || !rating || !status) {
     return NextResponse.json(
@@ -32,6 +32,7 @@ export async function PUT(
         rating: Number(rating),
         status: status as AlbumStatus,
         genre: genre || "",
+        coverImageUrl: coverImageUrl || "",
       },
     }
   );
