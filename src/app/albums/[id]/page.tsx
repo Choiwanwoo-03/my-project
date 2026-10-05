@@ -4,12 +4,24 @@ import { getAlbumById } from "@/lib/albums";
 import { gradientFor } from "@/lib/gradient";
 import StarRating from "@/components/StarRating";
 import DeleteAlbumButton from "@/components/DeleteAlbumButton";
+import TrackList from "@/components/TrackList";
+import { getAlbumTracks, SpotifyTrack } from "@/lib/spotify";
 
 export default async function AlbumDetailPage({ params }: { params: { id: string } }) {
   const album = await getAlbumById(params.id);
 
   if (!album) {
     notFound();
+  }
+
+  // Spotify 연결이 실패해도 앨범 정보는 보여야 하므로, 수록곡만 빼고 화면을 그린다.
+  let tracks: SpotifyTrack[] = [];
+  if (album.spotifyId) {
+    try {
+      tracks = await getAlbumTracks(album.spotifyId);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
@@ -73,6 +85,8 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
           )}
         </div>
       </div>
+
+      {tracks.length > 0 && <TrackList tracks={tracks} />}
     </main>
   );
 }

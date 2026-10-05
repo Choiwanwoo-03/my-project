@@ -10,6 +10,24 @@ export type SpotifyAlbumResult = {
   spotifyUrl: string;
 };
 
+export type SpotifyTrack = {
+  id: string;
+  name: string;
+  trackNumber: number;
+  discNumber: number;
+  durationMs: number;
+  spotifyUrl: string;
+};
+
+type SpotifyTrackItem = {
+  id: string;
+  name: string;
+  track_number: number;
+  disc_number: number;
+  duration_ms: number;
+  external_urls: { spotify: string };
+};
+
 type SpotifyAlbumItem = {
   id: string;
   name: string;
@@ -61,25 +79,56 @@ function toFullDate(date: string): string {
   return date;
 }
 
-export async function searchAlbums(query: string): Promise<SpotifyAlbumResult[]> {
+async function spotifyGet(url: string) {
   const token = await getAccessToken();
-  const params = new URLSearchParams({ q: query, type: "album", limit: "10" });
-
-  const res = await fetch(`${API_URL}/search?${params}`, {
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`Spotify 검색 실패: ${res.status}`);
+    throw new Error(`Spotify 요청 실패 (${res.status}): ${url}`);
   }
+  return res.json();
+}
 
-  const data = await res.json();
+export async function searchAlbums(query: string): Promise<SpotifyAlbumResult[]> {
+  const params = new URLSearchParams({ q: query, type: "album", limit: "10" });
+  const data = await spotifyGet(`${API_URL}/search?${params}`);
   return data.albums.items.map((item: SpotifyAlbumItem) => ({
     spotifyId: item.id,
     title: item.name,
     artist: item.artists.map((a) => a.name).join(", "),
     releaseDate: toFullDate(item.release_date),
     coverImageUrl: item.images[0]?.url ?? "",
+    spotifyUrl: item.external_urls.spotify,
+  }));
+}
+
+// Spotify 앨범 ID는 영문·숫자 22글자다. 다른 값이 들어오면 Spotify 주소를 만들지 않는다.
+const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{22}$/;
+
+export async function getAlbumTracks(spotifyId: string): Promise<SpotifyTrack[]> {
+  if (!SPOTIFY_ID_PATTERN.test(spotifyId)) {
+    return [];
+  }
+
+  const album = await spotifyGet(`${API_URL}/albums/${spotifyId}`);
+  const items: SpotifyTrackItem[] = [...album.tracks.items];
+
+  // 클래식 전집처럼 곡이 많은 앨범은 수록곡이 여러 번에 나눠서 오므로 다음 페이지를 이어서 받는다.
+  let next: string | null = album.tracks.next;
+  while (next) {
+    const page = await spotifyGet(next);
+    items.push(...page.items);
+    next = page.next;
+  }
+
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    trackNumber: item.track_number,
+    discNumber: item.disc_number,
+    durationMs: item.duration_ms,
     spotifyUrl: item.external_urls.spotify,
   }));
 }
