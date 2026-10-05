@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
-import { AlbumStatus } from "@/types/album";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { title, artist, releaseDate, rating, status, genre, coverImageUrl } = body;
+  const { title, artist, releaseDate, rating, genre, coverImageUrl } = body;
 
-  if (!title || !artist || !rating || !status) {
+  if (!title || !artist || !rating) {
     return NextResponse.json(
-      { error: "앨범명, 아티스트, 평점, 상태는 필수입니다." },
+      { error: "앨범명, 아티스트, 평점은 필수입니다." },
       { status: 400 }
     );
   }
@@ -19,7 +18,6 @@ export async function POST(request: Request) {
     artist,
     releaseDate: releaseDate || "",
     rating: Number(rating),
-    status: status as AlbumStatus,
     genre: genre || "",
     coverImageUrl: coverImageUrl || "",
   });

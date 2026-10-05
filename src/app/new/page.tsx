@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlbumStatus } from "@/types/album";
 
 export default function NewAlbumPage() {
   const router = useRouter();
@@ -10,7 +9,6 @@ export default function NewAlbumPage() {
   const [artist, setArtist] = useState("");
   const [releaseDate, setReleaseDate] = useState("");
   const [rating, setRating] = useState("5");
-  const [status, setStatus] = useState<AlbumStatus>("듣는중");
   const [genre, setGenre] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -38,7 +36,7 @@ export default function NewAlbumPage() {
     const res = await fetch("/api/albums", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, status, genre, coverImageUrl }),
+      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl }),
     });
 
     if (!res.ok) {
@@ -93,34 +91,19 @@ export default function NewAlbumPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">평점</label>
-              <select
-                value={rating}
-                onChange={(e) => setRating(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as AlbumStatus)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="듣는중">듣는중</option>
-                <option value="다들음">다들음</option>
-                <option value="인생앨범">인생앨범</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">평점</label>
+            <select
+              value={rating}
+              onChange={(e) => setRating(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

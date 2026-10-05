@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAlbumById } from "@/lib/albums";
 import { gradientFor } from "@/lib/gradient";
-import { STATUS_STYLES } from "@/lib/status-styles";
 import StarRating from "@/components/StarRating";
 import DeleteAlbumButton from "@/components/DeleteAlbumButton";
 
@@ -44,14 +43,6 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
               <dt className="text-gray-500">평점</dt>
               <dd>
                 <StarRating rating={album.rating} />
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">상태</dt>
-              <dd>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_STYLES[album.status]}`}>
-                  {album.status}
-                </span>
               </dd>
             </div>
             <div className="flex justify-between">

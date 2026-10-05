@@ -1,9 +1,8 @@
 import Link from "next/link";
 import AlbumCard from "@/components/AlbumCard";
 import SortSelect from "@/components/SortSelect";
-import StatusFilter from "@/components/StatusFilter";
 import { getDb } from "@/lib/mongodb";
-import { Album, AlbumStatus } from "@/types/album";
+import { Album } from "@/types/album";
 
 // 등록 직후 목록에 바로 반영되도록 캐시하지 않고 매번 새로 조회한다.
 export const dynamic = "force-dynamic";
@@ -18,11 +17,7 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function getAlbums(
-  query?: string,
-  sort?: string,
-  status?: AlbumStatus | ""
-): Promise<Album[]> {
+async function getAlbums(query?: string, sort?: string): Promise<Album[]> {
   const db = await getDb();
   const conditions = [];
   if (query) {
@@ -33,9 +28,6 @@ async function getAlbums(
         { artist: { $regex: pattern, $options: "i" } },
       ],
     });
-  }
-  if (status) {
-    conditions.push({ status });
   }
   const filter = conditions.length > 0 ? { $and: conditions } : {};
   const sortSpec = (sort && SORT_OPTIONS[sort]) || { _id: -1 };
@@ -48,7 +40,6 @@ async function getAlbums(
     artist: doc.artist,
     releaseDate: doc.releaseDate,
     rating: doc.rating,
-    status: doc.status,
     genre: doc.genre,
     coverImageUrl: doc.coverImageUrl,
   }));
@@ -57,45 +48,35 @@ async function getAlbums(
 type Stats = {
   total: number;
   averageRating: number;
-  countByStatus: Record<AlbumStatus, number>;
 };
 
 async function getStats(): Promise<Stats> {
   const db = await getDb();
   const docs = await db
     .collection("albums")
-    .find({}, { projection: { rating: 1, status: 1 } })
+    .find({}, { projection: { rating: 1 } })
     .toArray();
 
-  const countByStatus: Record<AlbumStatus, number> = {
-    듣는중: 0,
-    다들음: 0,
-    인생앨범: 0,
-  };
   let ratingSum = 0;
-
   for (const doc of docs) {
     ratingSum += doc.rating;
-    countByStatus[doc.status as AlbumStatus]++;
   }
 
   return {
     total: docs.length,
     averageRating: docs.length > 0 ? ratingSum / docs.length : 0,
-    countByStatus,
   };
 }
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { q?: string; sort?: string; status?: AlbumStatus | "" };
+  searchParams: { q?: string; sort?: string };
 }) {
   const query = searchParams.q ?? "";
   const sort = searchParams.sort ?? "";
-  const status = searchParams.status ?? "";
   const [albums, stats] = await Promise.all([
-    getAlbums(query, sort, status),
+    getAlbums(query, sort),
     getStats(),
   ]);
 
@@ -119,15 +100,6 @@ export default async function Home({
           <span>
             평균 평점 <strong className="text-gray-900">{stats.averageRating.toFixed(1)}</strong>
           </span>
-          <span>
-            듣는중 <strong className="text-gray-900">{stats.countByStatus["듣는중"]}</strong>
-          </span>
-          <span>
-            다들음 <strong className="text-gray-900">{stats.countByStatus["다들음"]}</strong>
-          </span>
-          <span>
-            인생앨범 <strong className="text-gray-900">{stats.countByStatus["인생앨범"]}</strong>
-          </span>
         </div>
       )}
 
@@ -146,8 +118,7 @@ export default async function Home({
           검색
         </button>
         <SortSelect defaultValue={sort} />
-        <StatusFilter defaultValue={status} />
-        {(query || sort || status) && (
+        {(query || sort) && (
           <Link
             href="/"
             className="rounded-lg text-gray-500 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -159,8 +130,8 @@ export default async function Home({
 
       {albums.length === 0 ? (
         <p className="text-sm text-gray-500">
-          {query || status
-            ? "조건에 맞는 앨범이 없습니다."
+          {query
+            ?"조건에 맞는 앨범이 없습니다."
             : "아직 등록된 앨범이 없습니다."}
         </p>
       ) : (
