@@ -86,7 +86,13 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-      {tracks.length > 0 && <TrackList tracks={tracks} />}
+      {tracks.length > 0 && (
+        <TrackList
+          albumId={album.id}
+          tracks={tracks}
+          initialFavoriteIds={album.favoriteTrackIds ?? []}
+        />
+      )}
     </main>
   );
 }

@@ -105,7 +105,7 @@ export async function searchAlbums(query: string): Promise<SpotifyAlbumResult[]>
 }
 
 // Spotify 앨범 ID는 영문·숫자 22글자다. 다른 값이 들어오면 Spotify 주소를 만들지 않는다.
-const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{22}$/;
+export const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{22}$/;
 
 export async function getAlbumTracks(spotifyId: string): Promise<SpotifyTrack[]> {
   if (!SPOTIFY_ID_PATTERN.test(spotifyId)) {

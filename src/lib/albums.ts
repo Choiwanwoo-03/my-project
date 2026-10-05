@@ -24,5 +24,6 @@ export async function getAlbumById(id: string): Promise<Album | null> {
     coverImageUrl: doc.coverImageUrl,
     spotifyId: doc.spotifyId,
     spotifyUrl: doc.spotifyUrl,
+    favoriteTrackIds: doc.favoriteTrackIds ?? [],
   };
 }

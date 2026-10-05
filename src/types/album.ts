@@ -8,4 +8,5 @@ export interface Album {
   coverImageUrl?: string;
   spotifyId?: string;
   spotifyUrl?: string;
+  favoriteTrackIds?: string[];
 }
