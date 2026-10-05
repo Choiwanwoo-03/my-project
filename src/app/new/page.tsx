@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SpotifyAlbumResult } from "@/lib/spotify";
+import SpotifySearch from "@/components/SpotifySearch";
 
 export default function NewAlbumPage() {
   const router = useRouter();
@@ -15,33 +16,9 @@ export default function NewAlbumPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
-  const [spotifyQuery, setSpotifyQuery] = useState("");
-  const [spotifyResults, setSpotifyResults] = useState<SpotifyAlbumResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [searchMessage, setSearchMessage] = useState("");
   const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
   const [spotifyId, setSpotifyId] = useState("");
   const [spotifyUrl, setSpotifyUrl] = useState("");
-
-  async function handleSpotifySearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!spotifyQuery.trim()) return;
-
-    setSearchMessage("");
-    setSearching(true);
-    const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(spotifyQuery)}`);
-    setSearching(false);
-
-    if (!res.ok) {
-      setSearchMessage("Spotify 검색에 실패했습니다.");
-      return;
-    }
-    const data = await res.json();
-    setSpotifyResults(data.albums);
-    if (data.albums.length === 0) {
-      setSearchMessage("검색 결과가 없습니다.");
-    }
-  }
 
   function handlePick(album: SpotifyAlbumResult) {
     setTitle(album.title);
@@ -50,8 +27,6 @@ export default function NewAlbumPage() {
     setSpotifyCoverUrl(album.coverImageUrl);
     setSpotifyId(album.spotifyId);
     setSpotifyUrl(album.spotifyUrl);
-    setSpotifyResults([]);
-    setSearchMessage(`"${album.title}" 정보를 채웠습니다. 평점과 장르를 입력하세요.`);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,56 +71,7 @@ export default function NewAlbumPage() {
           새 앨범 등록
         </h1>
 
-        <form onSubmit={handleSpotifySearch} className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Spotify에서 찾기 <span className="text-gray-400">(선택)</span>
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={spotifyQuery}
-              onChange={(e) => setSpotifyQuery(e.target.value)}
-              placeholder="앨범명이나 아티스트로 검색"
-              className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1DB954]"
-            />
-            <button
-              type="submit"
-              disabled={searching}
-              className="rounded-lg bg-[#1DB954] text-white text-sm font-medium px-4 py-2 hover:bg-[#1aa34a] transition-colors disabled:opacity-50"
-            >
-              {searching ? "검색 중..." : "검색"}
-            </button>
-          </div>
-
-          {searchMessage && <p className="mt-2 text-sm text-gray-500">{searchMessage}</p>}
-
-          {spotifyResults.length > 0 && (
-            <ul className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
-              {spotifyResults.map((album) => (
-                <li key={album.spotifyId}>
-                  <button
-                    type="button"
-                    onClick={() => handlePick(album)}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-gray-50"
-                  >
-                    {album.coverImageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={album.coverImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-gray-900 truncate">
-                        {album.title}
-                      </span>
-                      <span className="block text-xs text-gray-500 truncate">
-                        {album.artist} · {album.releaseDate.slice(0, 4)}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </form>
+        <SpotifySearch onPick={handlePick} />
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-6 pt-6 border-t border-gray-100">
           <div>

@@ -33,6 +33,8 @@ export default function TrackList({
   const playAlbum = usePlayAlbum();
 
   const totalMs = tracks.reduce((sum, track) => sum + track.durationMs, 0);
+  // 수정 화면에서 다른 Spotify 앨범으로 바꾸면 예전 최애곡 ID가 남을 수 있어, 지금 수록곡에 있는 것만 센다.
+  const favoriteCount = tracks.filter((track) => favoriteIds.includes(track.id)).length;
   // 디스크가 여러 장인 앨범은 곡 번호가 장마다 1부터 다시 시작해서 "디스크-번호"로 보여준다.
   const isMultiDisc = tracks.some((track) => track.discNumber > 1);
 
@@ -63,7 +65,7 @@ export default function TrackList({
           수록곡{" "}
           <span className="text-sm font-normal text-gray-500">
             {tracks.length}곡 · {formatTotalTime(totalMs)}
-            {favoriteIds.length > 0 && ` · 최애곡 ${favoriteIds.length}곡`}
+            {favoriteCount > 0 && ` · 최애곡 ${favoriteCount}곡`}
           </span>
         </h2>
         <button

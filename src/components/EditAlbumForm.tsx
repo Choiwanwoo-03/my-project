@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Album } from "@/types/album";
+import type { SpotifyAlbumResult } from "@/lib/spotify";
+import SpotifySearch from "@/components/SpotifySearch";
 
 export default function EditAlbumForm({ album }: { album: Album }) {
   const router = useRouter();
@@ -15,11 +17,27 @@ export default function EditAlbumForm({ album }: { album: Album }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
+  const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
+  const [spotifyId, setSpotifyId] = useState(album.spotifyId ?? "");
+  const [spotifyUrl, setSpotifyUrl] = useState(album.spotifyUrl ?? "");
+
+  function handlePick(picked: SpotifyAlbumResult) {
+    setTitle(picked.title);
+    setArtist(picked.artist);
+    setReleaseDate(picked.releaseDate);
+    setSpotifyCoverUrl(picked.coverImageUrl);
+    setSpotifyId(picked.spotifyId);
+    setSpotifyUrl(picked.spotifyUrl);
+  }
+
+  // Spotify에서 새로 고른 커버가 있으면 그걸, 없으면 원래 커버를 쓴다.
+  const currentCoverUrl = spotifyCoverUrl || album.coverImageUrl || "";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    let coverImageUrl = album.coverImageUrl ?? "";
+    let coverImageUrl = currentCoverUrl;
     if (coverImage) {
       setUploading(true);
       const formData = new FormData();
@@ -37,7 +55,7 @@ export default function EditAlbumForm({ album }: { album: Album }) {
     const res = await fetch(`/api/albums/${album.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl }),
+      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl }),
     });
 
     if (!res.ok) {
@@ -57,7 +75,14 @@ export default function EditAlbumForm({ album }: { album: Album }) {
           앨범 수정
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+        <p className="mt-4 text-sm text-gray-500">
+          {spotifyId
+            ? "✓ Spotify에 연결된 앨범입니다. 다른 앨범으로 바꾸려면 다시 검색하세요."
+            : "Spotify에 연결하면 커버, 수록곡, 재생 기능이 생깁니다."}
+        </p>
+        <SpotifySearch onPick={handlePick} />
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6 pt-6 border-t border-gray-100">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">앨범명</label>
             <input
@@ -121,10 +146,10 @@ export default function EditAlbumForm({ album }: { album: Album }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               커버 이미지 <span className="text-gray-400">(선택, 바꾸지 않으려면 비워두세요)</span>
             </label>
-            {album.coverImageUrl && (
+            {currentCoverUrl && !coverImage && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={album.coverImageUrl}
+                src={currentCoverUrl}
                 alt={album.title}
                 className="w-24 h-24 object-cover rounded-lg mb-2"
               />
