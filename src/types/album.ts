@@ -6,4 +6,6 @@ export interface Album {
   rating: number;
   genre?: string;
   coverImageUrl?: string;
+  spotifyId?: string;
+  spotifyUrl?: string;
 }

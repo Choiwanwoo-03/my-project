@@ -3,7 +3,7 @@ import { getDb } from "@/lib/mongodb";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { title, artist, releaseDate, rating, genre, coverImageUrl } = body;
+  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl } = body;
 
   if (!title || !artist || !rating) {
     return NextResponse.json(
@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     rating: Number(rating),
     genre: genre || "",
     coverImageUrl: coverImageUrl || "",
+    spotifyId: spotifyId || "",
+    spotifyUrl: spotifyUrl || "",
   });
 
   return NextResponse.json({ id: result.insertedId }, { status: 201 });

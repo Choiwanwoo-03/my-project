@@ -22,5 +22,7 @@ export async function getAlbumById(id: string): Promise<Album | null> {
     rating: doc.rating,
     genre: doc.genre,
     coverImageUrl: doc.coverImageUrl,
+    spotifyId: doc.spotifyId,
+    spotifyUrl: doc.spotifyUrl,
   };
 }
