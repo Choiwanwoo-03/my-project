@@ -13,6 +13,11 @@ const SORT_OPTIONS: Record<string, Record<string, 1 | -1>> = {
   releaseDate: { releaseDate: -1 },
 };
 
+// 검색어에 ( + . 같은 정규식 특수문자가 있어도 글자 그대로 찾도록 앞에 \ 를 붙인다.
+function escapeRegex(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function getAlbums(
   query?: string,
   sort?: string,
@@ -21,10 +26,11 @@ async function getAlbums(
   const db = await getDb();
   const conditions = [];
   if (query) {
+    const pattern = escapeRegex(query);
     conditions.push({
       $or: [
-        { title: { $regex: query, $options: "i" } },
-        { artist: { $regex: query, $options: "i" } },
+        { title: { $regex: pattern, $options: "i" } },
+        { artist: { $regex: pattern, $options: "i" } },
       ],
     });
   }
