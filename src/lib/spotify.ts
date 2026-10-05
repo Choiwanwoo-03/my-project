@@ -37,14 +37,14 @@ type SpotifyAlbumItem = {
   external_urls: { spotify: string };
 };
 
-// 토큰은 1시간 동안 유효해서, 만료 1분 전까지는 새로 받지 않고 재사용한다.
-let cachedToken: { value: string; expiresAt: number } | null = null;
+export type TokenResponse = {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+};
 
-async function getAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expiresAt) {
-    return cachedToken.value;
-  }
-
+// 앱 키(Client ID/Secret)로 Spotify 토큰 서버에 요청한다. 앱 전용 토큰과 사용자 토큰 모두 이 함수를 쓴다.
+export async function requestToken(params: Record<string, string>): Promise<TokenResponse> {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -57,14 +57,24 @@ async function getAccessToken(): Promise<string> {
       "Content-Type": "application/x-www-form-urlencoded",
       Authorization: "Basic " + Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
     },
-    body: "grant_type=client_credentials",
+    body: new URLSearchParams(params),
     cache: "no-store",
   });
   if (!res.ok) {
     throw new Error(`Spotify 토큰 발급 실패: ${res.status}`);
   }
+  return res.json();
+}
 
-  const data = await res.json();
+// 토큰은 1시간 동안 유효해서, 만료 1분 전까지는 새로 받지 않고 재사용한다.
+let cachedToken: { value: string; expiresAt: number } | null = null;
+
+async function getAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < cachedToken.expiresAt) {
+    return cachedToken.value;
+  }
+
+  const data = await requestToken({ grant_type: "client_credentials" });
   cachedToken = {
     value: data.access_token,
     expiresAt: Date.now() + (data.expires_in - 60) * 1000,

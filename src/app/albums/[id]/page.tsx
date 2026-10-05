@@ -86,9 +86,10 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
         </div>
       </div>
 
-      {tracks.length > 0 && (
+      {album.spotifyId && tracks.length > 0 && (
         <TrackList
           albumId={album.id}
+          albumSpotifyId={album.spotifyId}
           tracks={tracks}
           initialFavoriteIds={album.favoriteTrackIds ?? []}
         />
