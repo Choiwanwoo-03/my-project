@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AlbumCard from "@/components/AlbumCard";
 import SortSelect from "@/components/SortSelect";
+import GenreFilter from "@/components/GenreFilter";
 import { getDb } from "@/lib/mongodb";
 import { Album } from "@/types/album";
 
@@ -17,7 +18,7 @@ function escapeRegex(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function getAlbums(query?: string, sort?: string): Promise<Album[]> {
+async function getAlbums(query?: string, sort?: string, genre?: string): Promise<Album[]> {
   const db = await getDb();
   const conditions = [];
   if (query) {
@@ -28,6 +29,9 @@ async function getAlbums(query?: string, sort?: string): Promise<Album[]> {
         { artist: { $regex: pattern, $options: "i" } },
       ],
     });
+  }
+  if (genre) {
+    conditions.push({ genre });
   }
   const filter = conditions.length > 0 ? { $and: conditions } : {};
   const sortSpec = (sort && SORT_OPTIONS[sort]) || { _id: -1 };
@@ -43,6 +47,15 @@ async function getAlbums(query?: string, sort?: string): Promise<Album[]> {
     genre: doc.genre,
     coverImageUrl: doc.coverImageUrl,
   }));
+}
+
+// 장르는 자유 입력이라, 지금까지 저장된 장르 값들을 모아서 필터 목록으로 쓴다.
+async function getGenres(): Promise<string[]> {
+  const db = await getDb();
+  const genres: unknown[] = await db.collection("albums").distinct("genre");
+  return genres
+    .filter((genre): genre is string => typeof genre === "string" && genre.trim() !== "")
+    .sort((a, b) => a.localeCompare(b, "ko"));
 }
 
 type Stats = {
@@ -71,13 +84,15 @@ async function getStats(): Promise<Stats> {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { q?: string; sort?: string };
+  searchParams: { q?: string; sort?: string; genre?: string };
 }) {
   const query = searchParams.q ?? "";
   const sort = searchParams.sort ?? "";
-  const [albums, stats] = await Promise.all([
-    getAlbums(query, sort),
+  const genre = searchParams.genre ?? "";
+  const [albums, stats, genres] = await Promise.all([
+    getAlbums(query, sort, genre),
     getStats(),
+    getGenres(),
   ]);
 
   return (
@@ -118,7 +133,8 @@ export default async function Home({
           검색
         </button>
         <SortSelect defaultValue={sort} />
-        {(query || sort) && (
+        <GenreFilter genres={genres} defaultValue={genre} />
+        {(query || sort || genre) && (
           <Link
             href="/"
             className="rounded-lg text-gray-500 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -130,8 +146,8 @@ export default async function Home({
 
       {albums.length === 0 ? (
         <p className="text-sm text-gray-500">
-          {query
-            ?"조건에 맞는 앨범이 없습니다."
+          {query || genre
+            ? "조건에 맞는 앨범이 없습니다."
             : "아직 등록된 앨범이 없습니다."}
         </p>
       ) : (
