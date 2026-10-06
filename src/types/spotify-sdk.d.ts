@@ -2,8 +2,14 @@
 
 interface SpotifyPlayerState {
   paused: boolean;
+  position: number;
+  duration: number;
   track_window: {
-    current_track: { name: string; artists: { name: string }[] };
+    current_track: {
+      name: string;
+      artists: { name: string }[];
+      album: { name: string; images: { url: string }[] };
+    };
   };
 }
 
@@ -11,6 +17,11 @@ interface SpotifyPlayer {
   connect(): Promise<boolean>;
   disconnect(): void;
   togglePlay(): Promise<void>;
+  resume(): Promise<void>;
+  pause(): Promise<void>;
+  seek(positionMs: number): Promise<void>;
+  getVolume(): Promise<number>;
+  setVolume(volume: number): Promise<void>;
   nextTrack(): Promise<void>;
   previousTrack(): Promise<void>;
   addListener(event: "ready" | "not_ready", callback: (data: { device_id: string }) => void): boolean;

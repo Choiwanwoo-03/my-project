@@ -1,19 +1,56 @@
 "use client";
 
 import { createContext, useContext, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-type NowPlaying = { trackName: string; artistName: string; paused: boolean };
+export type NowPlaying = {
+  trackName: string;
+  artistName: string;
+  albumName: string;
+  coverUrl: string;
+  paused: boolean;
+  positionMs: number;
+  durationMs: number;
+  // Spotify가 위치(positionMs)를 알려준 시각. 재생 중이면 지금까지 흐른 시간을 더해 현재 위치를 계산한다.
+  updatedAt: number;
+};
+
+type PlayerControls = {
+  playAlbum: (albumSpotifyId: string, position?: number) => void;
+  nowPlaying: NowPlaying | null;
+  togglePlay: () => void;
+  nextTrack: () => void;
+  previousTrack: () => void;
+  resume: () => Promise<void>;
+  pause: () => Promise<void>;
+  seek: (positionMs: number) => Promise<void>;
+  // 볼륨을 delta(예: +0.1)만큼 바꾸고, 바뀐 볼륨(0~1)을 돌려준다.
+  changeVolume: (delta: number) => Promise<number>;
+};
 
 const NOT_CONNECTED = "NOT_CONNECTED";
 const LOCKED = "LOCKED";
 const SDK_URL = "https://sdk.scdn.co/spotify-player.js";
 
-const PlayAlbumContext = createContext<(albumSpotifyId: string, position?: number) => void>(
-  () => {}
-);
+const PlayerContext = createContext<PlayerControls>({
+  playAlbum: () => {},
+  nowPlaying: null,
+  togglePlay: () => {},
+  nextTrack: () => {},
+  previousTrack: () => {},
+  resume: async () => {},
+  pause: async () => {},
+  seek: async () => {},
+  changeVolume: async () => 0,
+});
+
+export function usePlayer() {
+  return useContext(PlayerContext);
+}
 
 export function usePlayAlbum() {
-  return useContext(PlayAlbumContext);
+  return useContext(PlayerContext).playAlbum;
 }
 
 async function fetchAccessToken(): Promise<string> {
@@ -82,7 +119,12 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
               setNowPlaying({
                 trackName: track.name,
                 artistName: track.artists.map((a) => a.name).join(", "),
+                albumName: track.album.name,
+                coverUrl: track.album.images[0]?.url ?? "",
                 paused: state.paused,
+                positionMs: state.position,
+                durationMs: state.duration,
+                updatedAt: Date.now(),
               });
             });
             player.connect();
@@ -158,12 +200,39 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
     }
   }
 
-  const isBarVisible = nowPlaying !== null || message !== "" || notConnected || locked;
+  const controls: PlayerControls = {
+    playAlbum,
+    nowPlaying,
+    togglePlay: () => playerRef.current?.togglePlay(),
+    nextTrack: () => playerRef.current?.nextTrack(),
+    previousTrack: () => playerRef.current?.previousTrack(),
+    resume: async () => {
+      await playerRef.current?.resume();
+    },
+    pause: async () => {
+      await playerRef.current?.pause();
+    },
+    seek: async (positionMs) => {
+      await playerRef.current?.seek(Math.round(positionMs));
+    },
+    changeVolume: async (delta) => {
+      const player = playerRef.current;
+      if (!player) return 0;
+      const next = Math.min(1, Math.max(0, (await player.getVolume()) + delta));
+      await player.setVolume(next);
+      return next;
+    },
+  };
+
+  // LP 화면은 자체 조작 버튼이 있어서 아래 바를 숨긴다.
+  const pathname = usePathname();
+  const isBarVisible =
+    pathname !== "/player" && (nowPlaying !== null || message !== "" || notConnected || locked);
   const controlClass =
     "w-9 h-9 rounded-full text-gray-700 hover:bg-gray-100 transition-colors text-lg leading-none";
 
   return (
-    <PlayAlbumContext.Provider value={playAlbum}>
+    <PlayerContext.Provider value={controls}>
       <div className={isBarVisible ? "pb-20" : ""}>{children}</div>
 
       {isBarVisible && (
@@ -201,7 +270,12 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
                 nowPlaying && (
                   <>
                     <p className="font-medium text-gray-900 truncate">{nowPlaying.trackName}</p>
-                    <p className="text-gray-500 truncate">{nowPlaying.artistName}</p>
+                    <p className="text-gray-500 truncate">
+                      {nowPlaying.artistName} ·{" "}
+                      <Link href="/player" className="font-medium text-[#1DB954] hover:underline">
+                        LP로 보기
+                      </Link>
+                    </p>
                   </>
                 )
               )}
@@ -238,6 +312,6 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
           </div>
         </div>
       )}
-    </PlayAlbumContext.Provider>
+    </PlayerContext.Provider>
   );
 }

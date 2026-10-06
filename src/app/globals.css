@@ -18,3 +18,14 @@ body {
     text-wrap: balance;
   }
 }
+
+/* LP 플레이어: 33⅓ RPM은 약 1.8초에 한 바퀴다. */
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-spin {
+  animation: vinyl-spin 1.8s linear infinite;
+}
