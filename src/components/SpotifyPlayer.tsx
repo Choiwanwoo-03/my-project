@@ -5,6 +5,7 @@ import { createContext, useContext, useRef, useState } from "react";
 type NowPlaying = { trackName: string; artistName: string; paused: boolean };
 
 const NOT_CONNECTED = "NOT_CONNECTED";
+const LOCKED = "LOCKED";
 const SDK_URL = "https://sdk.scdn.co/spotify-player.js";
 
 const PlayAlbumContext = createContext<(albumSpotifyId: string, position?: number) => void>(
@@ -20,10 +21,13 @@ async function fetchAccessToken(): Promise<string> {
   if (res.status === 404) {
     throw new Error(NOT_CONNECTED);
   }
-  if (!res.ok) {
-    throw new Error("Spotify 토큰을 받지 못했습니다.");
+  if (res.status === 401) {
+    throw new Error(LOCKED);
   }
   const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error ?? "Spotify 토큰을 받지 못했습니다.");
+  }
   return data.accessToken;
 }
 
@@ -45,6 +49,10 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [message, setMessage] = useState("");
   const [notConnected, setNotConnected] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [password, setPassword] = useState("");
+  // 비밀번호를 입력하고 나면 방금 누른 곡을 이어서 재생하려고 기억해 둔다.
+  const pendingPlayRef = useRef<{ albumSpotifyId: string; position: number } | null>(null);
 
   // 플레이어는 처음 재생할 때 한 번만 만들고, 이후에는 같은 기기(device)를 계속 쓴다.
   function getDeviceId(): Promise<string> {
@@ -100,6 +108,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
   }
 
   async function playAlbum(albumSpotifyId: string, position = 0) {
+    pendingPlayRef.current = { albumSpotifyId, position };
     setMessage("");
     setNotConnected(false);
     try {
@@ -119,11 +128,37 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
         setNotConnected(true);
         return;
       }
+      if (error instanceof Error && error.message === LOCKED) {
+        setLocked(true);
+        return;
+      }
       setMessage(error instanceof Error ? error.message : "재생에 실패했습니다.");
     }
   }
 
-  const isBarVisible = nowPlaying !== null || message !== "" || notConnected;
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage("");
+    const res = await fetch("/api/spotify/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setMessage(data.error ?? "잠금 해제에 실패했습니다.");
+      return;
+    }
+
+    setLocked(false);
+    setPassword("");
+    const pending = pendingPlayRef.current;
+    if (pending) {
+      playAlbum(pending.albumSpotifyId, pending.position);
+    }
+  }
+
+  const isBarVisible = nowPlaying !== null || message !== "" || notConnected || locked;
   const controlClass =
     "w-9 h-9 rounded-full text-gray-700 hover:bg-gray-100 transition-colors text-lg leading-none";
 
@@ -142,6 +177,24 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
                     연결하기
                   </a>
                 </span>
+              ) : locked ? (
+                <form onSubmit={handleUnlock} className="flex flex-wrap items-center gap-2">
+                  <span className="text-gray-600">재생하려면 비밀번호를 입력하세요.</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoFocus
+                    className="w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1DB954]"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-[#1DB954] text-white text-sm font-medium px-3 py-1.5 hover:bg-[#1aa34a] transition-colors"
+                  >
+                    확인
+                  </button>
+                  {message && <span className="text-red-600">{message}</span>}
+                </form>
               ) : message ? (
                 <span className="text-red-600">{message}</span>
               ) : (

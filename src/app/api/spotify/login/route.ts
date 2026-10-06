@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SPOTIFY_SCOPES } from "@/lib/spotify-auth";
+import { getPlayerLockState } from "@/lib/player-lock";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,11 @@ export function GET(request: Request) {
   const redirectUri = new URL(redirectUriEnv);
   if (request.headers.get("host") !== redirectUri.host) {
     return NextResponse.redirect(new URL("/api/spotify/login", redirectUri.origin));
+  }
+
+  // 잠금을 풀지 않은 사람이 다른 Spotify 계정으로 연결을 덮어쓰지 못하게 막는다.
+  if (getPlayerLockState() !== "unlocked") {
+    return NextResponse.json({ error: "재생 비밀번호를 먼저 입력하세요." }, { status: 401 });
   }
 
   // state는 돌아온 요청이 내가 시작한 로그인이 맞는지 확인하는 일회용 값이다.
