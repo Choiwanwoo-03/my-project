@@ -237,10 +237,6 @@ export default function PlayerPage() {
                 ⏭
               </button>
             </div>
-
-            <p className="mt-6 text-xs text-white/40">
-              스페이스 재생/일시정지 · ← → 5초 이동 · ↑ ↓ 볼륨 · 톤암을 끌어 판에 올리면 재생
-            </p>
           </div>
         ) : (
           <div className="mt-8 text-center text-white/70">
