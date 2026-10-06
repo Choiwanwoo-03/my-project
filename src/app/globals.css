@@ -29,3 +29,19 @@ body {
 .vinyl-spin {
   animation: vinyl-spin 1.8s linear infinite;
 }
+
+/* 수록곡 목록에서 지금 재생 중인 곡 옆에 움직이는 막대(이퀄라이저) */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.eq-bar {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}

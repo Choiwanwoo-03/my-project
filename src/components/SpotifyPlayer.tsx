@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export type NowPlaying = {
+  // 수록곡 목록에서 지금 나오는 곡을 찾을 때 쓰는 곡 ID들
+  trackIds: string[];
   trackName: string;
   artistName: string;
   albumName: string;
@@ -117,6 +119,9 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
               }
               const track = state.track_window.current_track;
               setNowPlaying({
+                trackIds: [track.id, track.linked_from?.id].filter(
+                  (id): id is string => typeof id === "string"
+                ),
                 trackName: track.name,
                 artistName: track.artists.map((a) => a.name).join(", "),
                 albumName: track.album.name,

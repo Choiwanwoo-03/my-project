@@ -2,7 +2,24 @@
 
 import { useState } from "react";
 import type { SpotifyTrack } from "@/lib/spotify";
-import { usePlayAlbum } from "@/components/SpotifyPlayer";
+import { usePlayer } from "@/components/SpotifyPlayer";
+
+const EQ_BAR_DELAYS = [0, 0.25, 0.5];
+
+// 지금 나오는 곡 옆에 그리는 움직이는 막대. 일시정지하면 그 모양 그대로 멈춘다.
+function Equalizer({ paused }: { paused: boolean }) {
+  return (
+    <span className="inline-flex h-3 items-end gap-[2px]" aria-label={paused ? "일시정지됨" : "재생 중"}>
+      {EQ_BAR_DELAYS.map((delay) => (
+        <span
+          key={delay}
+          className="eq-bar h-full w-[3px] rounded-sm bg-[#1DB954]"
+          style={{ animationDelay: `${delay}s`, animationPlayState: paused ? "paused" : "running" }}
+        />
+      ))}
+    </span>
+  );
+}
 
 function formatTrackTime(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
@@ -30,7 +47,7 @@ export default function TrackList({
   initialFavoriteIds: string[];
 }) {
   const [favoriteIds, setFavoriteIds] = useState(initialFavoriteIds);
-  const playAlbum = usePlayAlbum();
+  const { playAlbum, nowPlaying } = usePlayer();
 
   const totalMs = tracks.reduce((sum, track) => sum + track.durationMs, 0);
   // 수정 화면에서 다른 Spotify 앨범으로 바꾸면 예전 최애곡 ID가 남을 수 있어, 지금 수록곡에 있는 것만 센다.
@@ -80,10 +97,13 @@ export default function TrackList({
       <ol className="mt-3 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
         {tracks.map((track, index) => {
           const isFavorite = favoriteIds.includes(track.id);
+          const isCurrent = nowPlaying?.trackIds.includes(track.id) ?? false;
           return (
             <li
               key={track.id}
-              className={`flex items-center gap-4 px-4 py-2.5 text-sm ${isFavorite ? "bg-yellow-50" : ""}`}
+              className={`flex items-center gap-4 px-4 py-2.5 text-sm ${
+                isCurrent ? "bg-green-50" : isFavorite ? "bg-yellow-50" : ""
+              }`}
             >
               <button
                 type="button"
@@ -103,7 +123,13 @@ export default function TrackList({
                 className="group w-10 shrink-0 text-right text-gray-400 tabular-nums hover:text-[#1DB954]"
               >
                 <span className="group-hover:hidden">
-                  {isMultiDisc ? `${track.discNumber}-${track.trackNumber}` : track.trackNumber}
+                  {isCurrent ? (
+                    <Equalizer paused={nowPlaying?.paused ?? true} />
+                  ) : isMultiDisc ? (
+                    `${track.discNumber}-${track.trackNumber}`
+                  ) : (
+                    track.trackNumber
+                  )}
                 </span>
                 <span className="hidden group-hover:inline">▶</span>
               </button>
@@ -111,7 +137,9 @@ export default function TrackList({
                 href={track.spotifyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 min-w-0 truncate text-gray-900 hover:underline"
+                className={`flex-1 min-w-0 truncate hover:underline ${
+                  isCurrent ? "font-semibold text-[#1DB954]" : "text-gray-900"
+                }`}
               >
                 {track.name}
               </a>

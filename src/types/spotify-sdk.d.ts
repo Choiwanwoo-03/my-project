@@ -6,6 +6,9 @@ interface SpotifyPlayerState {
   duration: number;
   track_window: {
     current_track: {
+      id: string | null;
+      // 지역에 따라 같은 곡의 다른 버전으로 바꿔 재생되면, 원래 곡의 ID가 여기에 들어 있다.
+      linked_from?: { id: string | null };
       name: string;
       artists: { name: string }[];
       album: { name: string; images: { url: string }[] };
