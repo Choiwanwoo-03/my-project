@@ -117,6 +117,15 @@ export async function searchAlbums(query: string): Promise<SpotifyAlbumResult[]>
 // Spotify 앨범 ID는 영문·숫자 22글자다. 다른 값이 들어오면 Spotify 주소를 만들지 않는다.
 export const SPOTIFY_ID_PATTERN = /^[A-Za-z0-9]{22}$/;
 
+// 앨범 상세 화면의 Spotify 링크는 항상 이 함수로 서버/화면에서 직접 만든다.
+// DB에 저장된 spotifyUrl 문자열을 그대로 믿지 않아서, 누군가 API에 이상한 주소를 넣어도
+// <a href>에 그 주소가 그대로 나가는 일이 없다.
+export function spotifyAlbumUrl(spotifyId?: string): string | null {
+  return spotifyId && SPOTIFY_ID_PATTERN.test(spotifyId)
+    ? `https://open.spotify.com/album/${spotifyId}`
+    : null;
+}
+
 export async function getAlbumTracks(spotifyId: string): Promise<SpotifyTrack[]> {
   if (!SPOTIFY_ID_PATTERN.test(spotifyId)) {
     return [];

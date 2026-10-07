@@ -5,7 +5,7 @@ import { gradientFor } from "@/lib/gradient";
 import StarRating from "@/components/StarRating";
 import DeleteAlbumButton from "@/components/DeleteAlbumButton";
 import TrackList from "@/components/TrackList";
-import { getAlbumTracks, SpotifyTrack } from "@/lib/spotify";
+import { getAlbumTracks, spotifyAlbumUrl, SpotifyTrack } from "@/lib/spotify";
 
 export default async function AlbumDetailPage({ params }: { params: { id: string } }) {
   const album = await getAlbumById(params.id);
@@ -13,6 +13,9 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
   if (!album) {
     notFound();
   }
+
+  // DB에 저장된 spotifyUrl 문자열은 믿지 않고, spotifyId로 매번 다시 만든다.
+  const spotifyLink = spotifyAlbumUrl(album.spotifyId);
 
   // Spotify 연결이 실패해도 앨범 정보는 보여야 하므로, 수록곡만 빼고 화면을 그린다.
   let tracks: SpotifyTrack[] = [];
@@ -73,9 +76,9 @@ export default async function AlbumDetailPage({ params }: { params: { id: string
             <DeleteAlbumButton albumId={album.id} />
           </div>
 
-          {album.spotifyUrl && (
+          {spotifyLink && (
             <a
-              href={album.spotifyUrl}
+              href={spotifyLink}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-block rounded-lg bg-[#1DB954] text-white text-sm font-medium px-4 py-2 hover:bg-[#1aa34a] transition-colors"

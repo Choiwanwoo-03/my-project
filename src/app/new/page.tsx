@@ -18,7 +18,6 @@ export default function NewAlbumPage() {
 
   const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
   const [spotifyId, setSpotifyId] = useState("");
-  const [spotifyUrl, setSpotifyUrl] = useState("");
 
   function handlePick(album: SpotifyAlbumResult) {
     setTitle(album.title);
@@ -26,7 +25,6 @@ export default function NewAlbumPage() {
     setReleaseDate(album.releaseDate);
     setSpotifyCoverUrl(album.coverImageUrl);
     setSpotifyId(album.spotifyId);
-    setSpotifyUrl(album.spotifyUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,7 +53,7 @@ export default function NewAlbumPage() {
     const res = await fetch("/api/albums", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl }),
+      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
     });
 
     if (!res.ok) {

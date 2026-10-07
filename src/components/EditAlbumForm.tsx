@@ -19,7 +19,6 @@ export default function EditAlbumForm({ album }: { album: Album }) {
 
   const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
   const [spotifyId, setSpotifyId] = useState(album.spotifyId ?? "");
-  const [spotifyUrl, setSpotifyUrl] = useState(album.spotifyUrl ?? "");
 
   function handlePick(picked: SpotifyAlbumResult) {
     setTitle(picked.title);
@@ -27,7 +26,6 @@ export default function EditAlbumForm({ album }: { album: Album }) {
     setReleaseDate(picked.releaseDate);
     setSpotifyCoverUrl(picked.coverImageUrl);
     setSpotifyId(picked.spotifyId);
-    setSpotifyUrl(picked.spotifyUrl);
   }
 
   // Spotify에서 새로 고른 커버가 있으면 그걸, 없으면 원래 커버를 쓴다.
@@ -59,7 +57,7 @@ export default function EditAlbumForm({ album }: { album: Album }) {
     const res = await fetch(`/api/albums/${album.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl }),
+      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
     });
 
     if (!res.ok) {

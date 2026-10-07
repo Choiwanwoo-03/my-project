@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { getPlayerLockState } from "@/lib/player-lock";
+import { SPOTIFY_ID_PATTERN, spotifyAlbumUrl } from "@/lib/spotify";
 
 export async function PUT(
   request: Request,
@@ -16,7 +17,7 @@ export async function PUT(
   }
 
   const body = await request.json();
-  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl } = body;
+  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId } = body;
 
   if (!title || !artist || !rating) {
     return NextResponse.json(
@@ -24,6 +25,12 @@ export async function PUT(
       { status: 400 }
     );
   }
+
+  if (coverImageUrl && (typeof coverImageUrl !== "string" || !coverImageUrl.startsWith("https://"))) {
+    return NextResponse.json({ error: "잘못된 이미지 주소입니다." }, { status: 400 });
+  }
+
+  const validSpotifyId = typeof spotifyId === "string" && SPOTIFY_ID_PATTERN.test(spotifyId);
 
   const db = await getDb();
   const result = await db.collection("albums").updateOne(
@@ -36,8 +43,8 @@ export async function PUT(
         rating: Number(rating),
         genre: genre || "",
         coverImageUrl: coverImageUrl || "",
-        spotifyId: spotifyId || "",
-        spotifyUrl: spotifyUrl || "",
+        spotifyId: validSpotifyId ? spotifyId : "",
+        spotifyUrl: validSpotifyId ? spotifyAlbumUrl(spotifyId) : "",
       },
     }
   );
