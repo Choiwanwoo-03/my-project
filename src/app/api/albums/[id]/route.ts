@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { getPlayerLockState } from "@/lib/player-lock";
 
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  if (getPlayerLockState() !== "unlocked") {
+    return NextResponse.json({ error: "잠금을 먼저 해제해야 합니다." }, { status: 401 });
+  }
+
   if (!ObjectId.isValid(params.id)) {
     return NextResponse.json({ error: "잘못된 id입니다." }, { status: 400 });
   }
@@ -48,6 +53,10 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  if (getPlayerLockState() !== "unlocked") {
+    return NextResponse.json({ error: "잠금을 먼저 해제해야 합니다." }, { status: 401 });
+  }
+
   if (!ObjectId.isValid(params.id)) {
     return NextResponse.json({ error: "잘못된 id입니다." }, { status: 400 });
   }

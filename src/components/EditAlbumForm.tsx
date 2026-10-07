@@ -46,7 +46,11 @@ export default function EditAlbumForm({ album }: { album: Album }) {
       setUploading(false);
 
       if (!uploadRes.ok) {
-        setError("이미지 업로드에 실패했습니다.");
+        setError(
+          uploadRes.status === 401
+            ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+            : "이미지 업로드에 실패했습니다."
+        );
         return;
       }
       ({ url: coverImageUrl } = await uploadRes.json());
@@ -59,7 +63,11 @@ export default function EditAlbumForm({ album }: { album: Album }) {
     });
 
     if (!res.ok) {
-      setError("수정에 실패했습니다. 다시 시도해 주세요.");
+      setError(
+        res.status === 401
+          ? "잠금이 걸려 있어 수정할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+          : "수정에 실패했습니다. 다시 시도해 주세요."
+      );
       return;
     }
 

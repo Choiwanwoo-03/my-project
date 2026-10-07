@@ -71,7 +71,11 @@ export default function TrackList({
     });
     if (!res.ok) {
       setFavoriteIds(previous);
-      alert("최애곡 저장에 실패했습니다.");
+      alert(
+        res.status === 401
+          ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+          : "최애곡 저장에 실패했습니다."
+      );
     }
   }
 

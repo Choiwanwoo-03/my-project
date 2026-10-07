@@ -42,7 +42,11 @@ export default function NewAlbumPage() {
       setUploading(false);
 
       if (!uploadRes.ok) {
-        setError("이미지 업로드에 실패했습니다.");
+        setError(
+          uploadRes.status === 401
+            ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+            : "이미지 업로드에 실패했습니다."
+        );
         return;
       }
       ({ url: coverImageUrl } = await uploadRes.json());
@@ -55,7 +59,11 @@ export default function NewAlbumPage() {
     });
 
     if (!res.ok) {
-      setError("저장에 실패했습니다. 다시 시도해 주세요.");
+      setError(
+        res.status === 401
+          ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+          : "저장에 실패했습니다. 다시 시도해 주세요."
+      );
       return;
     }
 
