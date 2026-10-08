@@ -22,7 +22,7 @@
 - 하는 일:
 - 모르겠는 것:
 
-### src/app/new/page.tsx
+### src/components/NewAlbumButton.tsx
 - 하는 일:
 - 모르겠는 것:
 

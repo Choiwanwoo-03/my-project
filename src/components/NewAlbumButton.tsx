@@ -1,12 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import type { SpotifyAlbumResult } from "@/lib/spotify";
 import SpotifySearch from "@/components/SpotifySearch";
 
-export default function NewAlbumPage() {
-  const router = useRouter();
+export default function NewAlbumButton() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2 hover:bg-indigo-700 transition-colors"
+      >
+        + 새 앨범 등록
+      </button>
+      {open && <NewAlbumModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function NewAlbumModal({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [releaseDate, setReleaseDate] = useState("");
@@ -72,23 +87,37 @@ export default function NewAlbumPage() {
       }
 
       leaving = true;
-      // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
-      // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
+      // 모달을 닫고 목록을 새로 그리는 가장 간단하고 확실한 방법 — 같은 주소로 다시 이동해도
+      // 브라우저는 전체 새로고침을 한다. router.push/refresh 조합이 배포 환경에서
+      // 경쟁 상태를 일으켰던 적이 있어(등록·수정·삭제 공통) 이 방식을 그대로 따른다.
       window.location.href = "/";
     } catch {
       setError("네트워크 오류로 저장하지 못했습니다. 다시 시도해 주세요.");
     } finally {
-      // 성공해서 페이지를 떠나는 중이면, 새 화면이 뜰 때까지 버튼을 계속 막아 둔다.
       if (!leaving) setSubmitting(false);
     }
   }
 
   return (
-    <main className="max-w-md mx-auto px-6 py-10">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-        <h1 className="text-xl font-bold text-gray-900 pb-4 border-b border-gray-100">
-          새 앨범 등록
-        </h1>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 px-4 py-10"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+          <h1 className="text-xl font-bold text-gray-900">새 앨범 등록</h1>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
 
         <SpotifySearch onPick={handlePick} />
 
@@ -181,7 +210,7 @@ export default function NewAlbumPage() {
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
-              onClick={() => router.push("/")}
+              onClick={onClose}
               className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
             >
               취소
@@ -196,6 +225,6 @@ export default function NewAlbumPage() {
           </div>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

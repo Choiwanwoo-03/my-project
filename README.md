@@ -43,8 +43,7 @@ http://localhost:3000 에서 확인한다.
 my-project/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                목록 (검색·정렬·장르 필터·통계)
-│   │   ├── new/page.tsx             등록
+│   │   ├── page.tsx                목록 (검색·정렬·장르 필터·통계, 등록은 모달로 띄움)
 │   │   ├── albums/[id]/page.tsx     상세 (수록곡·재생 포함)
 │   │   ├── albums/[id]/edit/page.tsx 수정
 │   │   ├── player/page.tsx          LP 턴테이블 재생 화면
@@ -53,7 +52,7 @@ my-project/
 │   │       ├── albums/[id]/favorites/ 최애곡 표시 (PATCH)
 │   │       ├── upload/               이미지 업로드
 │   │       └── spotify/              검색·로그인·콜백·토큰·잠금 해제
-│   ├── components/   재사용 UI (AlbumCard, SpotifyPlayer, TrackList 등)
+│   ├── components/   재사용 UI (AlbumCard, NewAlbumButton(등록 모달), SpotifyPlayer, TrackList 등)
 │   ├── lib/           공용 로직 (DB 연결, 입력 검증, 잠금, Spotify API)
 │   └── types/         타입 정의 (Album, Spotify SDK)
 └── docs/              로컬 전용 설계 문서 (git에는 안 올라감)
