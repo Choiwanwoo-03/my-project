@@ -16,7 +16,7 @@
 
 ---
 
-## A. 저장 흐름 — 이 4개부터 읽는다
+## A. 저장 흐름 — 이 5개부터 읽는다
 
 ### src/types/album.ts
 - 하는 일:
@@ -27,6 +27,10 @@
 - 모르겠는 것:
 
 ### src/app/api/albums/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/lib/album-input.ts
 - 하는 일:
 - 모르겠는 것:
 
@@ -54,11 +58,19 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/app/player/page.tsx
+- 하는 일:
+- 모르겠는 것:
+
 ---
 
 ## C. 나머지 서버 코드
 
 ### src/app/api/albums/[id]/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/albums/[id]/favorites/route.ts
 - 하는 일:
 - 모르겠는 것:
 
@@ -70,9 +82,61 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/lib/player-lock.ts
+- 하는 일:
+- 모르겠는 것:
+
 ---
 
-## D. 컴포넌트
+## D. Spotify 연동
+
+### src/lib/spotify.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/lib/spotify-auth.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/spotify/login/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/spotify/callback/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/spotify/token/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/spotify/search/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/api/spotify/unlock/route.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/components/SpotifySearch.tsx
+- 하는 일:
+- 모르겠는 것:
+
+### src/components/SpotifyPlayer.tsx
+- 하는 일:
+- 모르겠는 것:
+
+### src/components/TrackList.tsx
+- 하는 일:
+- 모르겠는 것:
+
+### src/types/spotify-sdk.d.ts
+- 하는 일:
+- 모르겠는 것:
+
+---
+
+## E. 컴포넌트
 
 ### src/components/AlbumCard.tsx
 - 하는 일:
@@ -86,7 +150,7 @@
 - 하는 일:
 - 모르겠는 것:
 
-### src/components/StatusFilter.tsx
+### src/components/GenreFilter.tsx
 - 하는 일:
 - 모르겠는 것:
 
@@ -100,17 +164,9 @@
 
 ---
 
-## E. 도우미 파일
+## F. 도우미 파일
 
 ### src/lib/gradient.ts
-- 하는 일:
-- 모르겠는 것:
-
-### src/lib/status-styles.ts
-- 하는 일:
-- 모르겠는 것:
-
-### src/data/mock-albums.ts
 - 하는 일:
 - 모르겠는 것:
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId, UpdateFilter } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { getPlayerLockState } from "@/lib/player-lock";
 import { SPOTIFY_ID_PATTERN } from "@/lib/spotify";
 
 type FavoritesDoc = { favoriteTrackIds: string[] };
@@ -9,6 +10,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
+  if (getPlayerLockState() !== "unlocked") {
+    return NextResponse.json({ error: "잠금을 먼저 해제해야 합니다." }, { status: 401 });
+  }
+
   if (!ObjectId.isValid(params.id)) {
     return NextResponse.json({ error: "잘못된 id입니다." }, { status: 400 });
   }

@@ -13,12 +13,11 @@ export default function NewAlbumPage() {
   const [rating, setRating] = useState("5");
   const [genre, setGenre] = useState("");
   const [coverImage, setCoverImage] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
   const [spotifyId, setSpotifyId] = useState("");
-  const [spotifyUrl, setSpotifyUrl] = useState("");
 
   function handlePick(album: SpotifyAlbumResult) {
     setTitle(album.title);
@@ -26,42 +25,62 @@ export default function NewAlbumPage() {
     setReleaseDate(album.releaseDate);
     setSpotifyCoverUrl(album.coverImageUrl);
     setSpotifyId(album.spotifyId);
-    setSpotifyUrl(album.spotifyUrl);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // 이미지 업로드부터 앨범 저장까지 끝날 때까지 버튼을 막아서, 연타해도 두 번 등록되지 않게 한다.
+    setSubmitting(true);
+    // window.location.href는 페이지 이동을 "시작"만 하고 바로 다음 줄로 넘어간다.
+    // 그래서 저장에 성공한 뒤 finally에서 무조건 버튼을 풀면, 새 목록 화면이 실제로
+    // 뜨기 전(서버가 MongoDB를 조회하는 그 짧은 시간) 버튼이 다시 눌려 두 번 등록될 수 있다.
+    // leaving이 true면(=이동을 시작했으면) finally에서 버튼을 풀지 않는다.
+    let leaving = false;
 
-    let coverImageUrl = spotifyCoverUrl;
-    if (coverImage) {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", coverImage);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
-      setUploading(false);
+    try {
+      let coverImageUrl = spotifyCoverUrl;
+      if (coverImage) {
+        const formData = new FormData();
+        formData.append("file", coverImage);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
 
-      if (!uploadRes.ok) {
-        setError("이미지 업로드에 실패했습니다.");
+        if (!uploadRes.ok) {
+          setError(
+            uploadRes.status === 401
+              ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+              : "이미지 업로드에 실패했습니다."
+          );
+          return;
+        }
+        ({ url: coverImageUrl } = await uploadRes.json());
+      }
+
+      const res = await fetch("/api/albums", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
+      });
+
+      if (!res.ok) {
+        setError(
+          res.status === 401
+            ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+            : "저장에 실패했습니다. 다시 시도해 주세요."
+        );
         return;
       }
-      ({ url: coverImageUrl } = await uploadRes.json());
+
+      leaving = true;
+      // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
+      // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
+      window.location.href = "/";
+    } catch {
+      setError("네트워크 오류로 저장하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      // 성공해서 페이지를 떠나는 중이면, 새 화면이 뜰 때까지 버튼을 계속 막아 둔다.
+      if (!leaving) setSubmitting(false);
     }
-
-    const res = await fetch("/api/albums", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId, spotifyUrl }),
-    });
-
-    if (!res.ok) {
-      setError("저장에 실패했습니다. 다시 시도해 주세요.");
-      return;
-    }
-
-    // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
-    // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
-    window.location.href = "/";
   }
 
   return (
@@ -169,10 +188,10 @@ export default function NewAlbumPage() {
             </button>
             <button
               type="submit"
-              disabled={uploading}
+              disabled={submitting}
               className="rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2 hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              {uploading ? "업로드 중..." : "저장"}
+              {submitting ? "저장 중..." : "저장"}
             </button>
           </div>
         </form>
