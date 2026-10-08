@@ -14,7 +14,7 @@ export default function EditAlbumForm({ album }: { album: Album }) {
   const [rating, setRating] = useState(String(album.rating));
   const [genre, setGenre] = useState(album.genre ?? "");
   const [coverImage, setCoverImage] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const [spotifyCoverUrl, setSpotifyCoverUrl] = useState("");
@@ -34,44 +34,49 @@ export default function EditAlbumForm({ album }: { album: Album }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // 이미지 업로드부터 앨범 저장까지 끝날 때까지 버튼을 막아서, 연타해도 두 번 저장되지 않게 한다.
+    // 중간에 예외가 나도 finally에서 항상 풀어 버튼이 "저장 중..."에 멈춰 있지 않게 한다.
+    setSubmitting(true);
 
-    let coverImageUrl = currentCoverUrl;
-    if (coverImage) {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append("file", coverImage);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
-      setUploading(false);
+    try {
+      let coverImageUrl = currentCoverUrl;
+      if (coverImage) {
+        const formData = new FormData();
+        formData.append("file", coverImage);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
 
-      if (!uploadRes.ok) {
+        if (!uploadRes.ok) {
+          setError(
+            uploadRes.status === 401
+              ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+              : "이미지 업로드에 실패했습니다."
+          );
+          return;
+        }
+        ({ url: coverImageUrl } = await uploadRes.json());
+      }
+
+      const res = await fetch(`/api/albums/${album.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
+      });
+
+      if (!res.ok) {
         setError(
-          uploadRes.status === 401
-            ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-            : "이미지 업로드에 실패했습니다."
+          res.status === 401
+            ? "잠금이 걸려 있어 수정할 수 없습니다. 재생 잠금을 먼저 해제하세요."
+            : "수정에 실패했습니다. 다시 시도해 주세요."
         );
         return;
       }
-      ({ url: coverImageUrl } = await uploadRes.json());
+
+      // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
+      // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
+      window.location.href = `/albums/${album.id}`;
+    } finally {
+      setSubmitting(false);
     }
-
-    const res = await fetch(`/api/albums/${album.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
-    });
-
-    if (!res.ok) {
-      setError(
-        res.status === 401
-          ? "잠금이 걸려 있어 수정할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-          : "수정에 실패했습니다. 다시 시도해 주세요."
-      );
-      return;
-    }
-
-    // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
-    // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
-    window.location.href = `/albums/${album.id}`;
   }
 
   return (
@@ -180,10 +185,10 @@ export default function EditAlbumForm({ album }: { album: Album }) {
             </button>
             <button
               type="submit"
-              disabled={uploading}
+              disabled={submitting}
               className="rounded-lg bg-indigo-600 text-white text-sm font-medium px-4 py-2 hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              {uploading ? "업로드 중..." : "저장"}
+              {submitting ? "저장 중..." : "저장"}
             </button>
           </div>
         </form>
