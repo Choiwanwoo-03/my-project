@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { getPlayerLockState } from "@/lib/player-lock";
-import { SPOTIFY_ID_PATTERN, spotifyAlbumUrl } from "@/lib/spotify";
+import { parseAlbumInput } from "@/lib/album-input";
 
 export async function PUT(
   request: Request,
@@ -16,38 +16,22 @@ export async function PUT(
     return NextResponse.json({ error: "잘못된 id입니다." }, { status: 400 });
   }
 
-  const body = await request.json();
-  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId } = body;
-
-  if (!title || !artist || !rating) {
-    return NextResponse.json(
-      { error: "앨범명, 아티스트, 평점은 필수입니다." },
-      { status: 400 }
-    );
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "잘못된 요청 형식입니다." }, { status: 400 });
   }
 
-  if (coverImageUrl && (typeof coverImageUrl !== "string" || !coverImageUrl.startsWith("https://"))) {
-    return NextResponse.json({ error: "잘못된 이미지 주소입니다." }, { status: 400 });
+  const parsed = parseAlbumInput(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
-
-  const validSpotifyId = typeof spotifyId === "string" && SPOTIFY_ID_PATTERN.test(spotifyId);
 
   const db = await getDb();
-  const result = await db.collection("albums").updateOne(
-    { _id: new ObjectId(params.id) },
-    {
-      $set: {
-        title,
-        artist,
-        releaseDate: releaseDate || "",
-        rating: Number(rating),
-        genre: genre || "",
-        coverImageUrl: coverImageUrl || "",
-        spotifyId: validSpotifyId ? spotifyId : "",
-        spotifyUrl: validSpotifyId ? spotifyAlbumUrl(spotifyId) : "",
-      },
-    }
-  );
+  const result = await db
+    .collection("albums")
+    .updateOne({ _id: new ObjectId(params.id) }, { $set: parsed.data });
 
   if (result.matchedCount === 0) {
     return NextResponse.json({ error: "앨범을 찾을 수 없습니다." }, { status: 404 });
