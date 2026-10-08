@@ -58,7 +58,7 @@
 - 하는 일:
 - 모르겠는 것:
 
-### src/app/player/page.tsx
+### src/components/HomeTurntable.tsx
 - 하는 일:
 - 모르겠는 것:
 
