@@ -31,8 +31,12 @@ export default function NewAlbumPage() {
     e.preventDefault();
     setError("");
     // 이미지 업로드부터 앨범 저장까지 끝날 때까지 버튼을 막아서, 연타해도 두 번 등록되지 않게 한다.
-    // 중간에 예외가 나도 finally에서 항상 풀어 버튼이 "저장 중..."에 멈춰 있지 않게 한다.
     setSubmitting(true);
+    // window.location.href는 페이지 이동을 "시작"만 하고 바로 다음 줄로 넘어간다.
+    // 그래서 저장에 성공한 뒤 finally에서 무조건 버튼을 풀면, 새 목록 화면이 실제로
+    // 뜨기 전(서버가 MongoDB를 조회하는 그 짧은 시간) 버튼이 다시 눌려 두 번 등록될 수 있다.
+    // leaving이 true면(=이동을 시작했으면) finally에서 버튼을 풀지 않는다.
+    let leaving = false;
 
     try {
       let coverImageUrl = spotifyCoverUrl;
@@ -67,11 +71,15 @@ export default function NewAlbumPage() {
         return;
       }
 
+      leaving = true;
       // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
       // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
       window.location.href = "/";
+    } catch {
+      setError("네트워크 오류로 저장하지 못했습니다. 다시 시도해 주세요.");
     } finally {
-      setSubmitting(false);
+      // 성공해서 페이지를 떠나는 중이면, 새 화면이 뜰 때까지 버튼을 계속 막아 둔다.
+      if (!leaving) setSubmitting(false);
     }
   }
 
