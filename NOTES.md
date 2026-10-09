@@ -22,7 +22,7 @@
 - 하는 일:
 - 모르겠는 것:
 
-### src/app/new/page.tsx
+### src/components/NewAlbumButton.tsx
 - 하는 일:
 - 모르겠는 것:
 
@@ -50,11 +50,7 @@
 - 하는 일:
 - 모르겠는 것:
 
-### src/app/albums/[id]/page.tsx
-- 하는 일:
-- 모르겠는 것:
-
-### src/app/albums/[id]/edit/page.tsx
+### src/components/AlbumDetailModal.tsx
 - 하는 일:
 - 모르겠는 것:
 
@@ -151,10 +147,6 @@
 - 모르겠는 것:
 
 ### src/components/GenreFilter.tsx
-- 하는 일:
-- 모르겠는 것:
-
-### src/components/EditAlbumForm.tsx
 - 하는 일:
 - 모르겠는 것:
 
