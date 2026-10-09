@@ -44,13 +44,13 @@ my-project/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx                목록 (검색·정렬·장르 필터·통계) — 등록·상세·수정 전부 이 화면 위 모달로 뜬다
-│   │   ├── player/page.tsx          LP 턴테이블 재생 화면
+│   │   ├── player/page.tsx          LP를 크게 보는 화면 (메인 좌측 패널의 확대 버튼으로 진입)
 │   │   └── api/
 │   │       ├── albums/              등록 (POST), 조회·수정·삭제 (GET/PUT/DELETE by id)
 │   │       ├── albums/[id]/favorites/ 최애곡 표시 (PATCH)
 │   │       ├── upload/               이미지 업로드
 │   │       └── spotify/              검색·로그인·콜백·토큰·잠금 해제
-│   ├── components/   재사용 UI (AlbumCard, NewAlbumButton(등록 모달), AlbumDetailModal(상세·수정 모달), SpotifyPlayer, TrackList 등)
+│   ├── components/   재사용 UI (AlbumCard, NewAlbumButton(등록 모달), AlbumDetailModal(상세·수정 모달), Turntable(LP 공용 로직)+HomeTurntable(메인 좌측 패널), SpotifyPlayer, TrackList 등)
 │   ├── lib/           공용 로직 (DB 연결, 입력 검증, 잠금, Spotify API)
 │   └── types/         타입 정의 (Album, Spotify SDK)
 └── docs/              로컬 전용 설계 문서 (git에는 안 올라감)
@@ -60,7 +60,7 @@ my-project/
 
 - **등록 / 상세 / 수정 / 삭제** — 목록 화면에서 벗어나지 않고 전부 모달로 처리. 앨범명·아티스트·발매일·평점(1~5)·장르·커버 이미지
 - **Spotify 연동** — 등록·수정 모달에서 검색해 정보·커버 자동 입력, 상세 모달에 수록곡 목록·총 재생시간·최애곡(★) 표시
-- **재생** — Spotify 계정 연결 후 상세 모달에서 바로 재생/일시정지/다음 곡, `/player`에서 LP 턴테이블 모양으로 재생(톤암 드래그, 스페이스/방향키 조작)
+- **재생** — Spotify 계정 연결 후 상세 모달에서 바로 재생/일시정지/다음 곡, 메인 화면 좌측에 항상 떠 있는 LP 턴테이블로 재생 관리(톤암 드래그, 스페이스/방향키 조작), 확대 버튼으로 `/player`에서 크게도 볼 수 있음
 - **목록** — 검색(앨범명/아티스트), 정렬(평점·발매일순), 장르 필터, 통계(총 개수·평균 평점)
 - **이미지 업로드** — Vercel Blob에 커버 이미지 직접 업로드
 - **잠금** — 비밀번호 하나로 등록/수정/삭제/재생을 전부 보호 (`PLAYER_PASSWORD`)

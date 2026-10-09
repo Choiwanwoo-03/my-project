@@ -54,6 +54,14 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/components/HomeTurntable.tsx
+- 하는 일:
+- 모르겠는 것:
+
+### src/components/Turntable.tsx
+- 하는 일:
+- 모르겠는 것:
+
 ### src/app/player/page.tsx
 - 하는 일:
 - 모르겠는 것:
