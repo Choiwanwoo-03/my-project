@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "내 앨범 기록",
+  title: "바이닐로그",
   description: "들은 음악 앨범을 기록하는 개인용 웹 서비스",
 };
 
