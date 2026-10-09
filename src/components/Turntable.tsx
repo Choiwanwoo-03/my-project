@@ -22,6 +22,60 @@ const ARM_MAX = 44;
 const SEEK_STEP_MS = 5000;
 const VOLUME_STEP = 0.1;
 
+// 커버 이미지를 작게 그려서 픽셀을 평균 낸, 그 앨범을 대표하는 색("r g b" 문자열).
+// CORS 때문에 캔버스를 못 읽으면(또는 이미지가 없으면) null — 그때는 기본 회색 턴테이블로 보여준다.
+function useAlbumColor(imageUrl: string | undefined): string | null {
+  const [color, setColor] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setColor(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const size = 24;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        const pixelCount = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+        setColor(`${Math.round(r / pixelCount)} ${Math.round(g / pixelCount)} ${Math.round(b / pixelCount)}`);
+      } catch {
+        setColor(null);
+      }
+    };
+    img.onerror = () => setColor(null);
+    img.src = imageUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [imageUrl]);
+
+  return color;
+}
+
+// "r g b" 문자열을 지정한 비율만큼 어둡게 만든다(턴테이블 몸체는 은은하게 어두운 톤이어야 하니까).
+function darken(rgb: string, factor: number): string {
+  const [r, g, b] = rgb.split(" ").map(Number);
+  return `${Math.round(r * factor)} ${Math.round(g * factor)} ${Math.round(b * factor)}`;
+}
+
 type Size = "compact" | "large";
 
 // 크기별로 달라지는 치수·글자 크기만 여기 모아 둔다. 턴테이블 동작 로직은 크기와 무관하게 하나다.
@@ -34,8 +88,10 @@ const SIZE_CONFIG: Record<
     knob: string;
     stem: string;
     headshell: string;
-    pivotOffsetX: number;
-    pivotOffsetY: number;
+    // 톤암 축 위치를 턴테이블 실제 렌더링 크기에 대한 비율(0~1)로 잡는다 — 화면 폭에 따라 커지는
+    // compact 크기에서도 축이 항상 손잡이 위치와 맞게 하기 위함.
+    pivotRatioX: number;
+    pivotRatioY: number;
     toast: string;
     infoWrap: string;
     title: string;
@@ -49,25 +105,27 @@ const SIZE_CONFIG: Record<
   }
 > = {
   compact: {
+    // 고정 크기 대신 부모(좌측 LP 패널) 너비에 비례해서 커진다. 92%로 둬서 카드 안쪽에 자연스러운
+    // 여백이 남고, max-w로 과도하게 커지는 것만 막는다(패널을 끝까지 넓혀도 음반이 화면을 집어삼키지 않게).
     housing:
-      "relative mx-auto h-56 w-56 rounded-3xl bg-gradient-to-br from-neutral-800 to-neutral-900 shadow-xl ring-1 ring-white/10",
-    vinylInset: "absolute left-4 top-4 h-48 w-48",
-    tonearmBase: "absolute right-5 top-5 h-44 w-3",
-    knob: "absolute -left-2 -top-2 h-7 w-7 rounded-full bg-neutral-400 ring-4 ring-neutral-600",
-    stem: "absolute left-1/2 top-0 h-full w-1.5 -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400",
-    headshell: "absolute bottom-0 left-1/2 h-6 w-4 -translate-x-1/2 translate-y-1.5 rounded-sm bg-neutral-300",
-    pivotOffsetX: 26,
-    pivotOffsetY: 20,
+      "relative mx-auto w-[92%] max-w-lg aspect-square rounded-3xl bg-gradient-to-br from-neutral-800 to-neutral-900 shadow-xl ring-1 ring-white/10",
+    vinylInset: "absolute inset-[8%]",
+    tonearmBase: "absolute right-[8%] top-[8%] h-[78%] w-3.5",
+    knob: "absolute -left-2.5 -top-2.5 h-9 w-9 rounded-full bg-neutral-400 ring-4 ring-neutral-600",
+    stem: "absolute left-1/2 top-0 h-full w-2 -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400",
+    headshell: "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
+    pivotRatioX: 0.118,
+    pivotRatioY: 0.09,
     toast: "pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-xs",
-    infoWrap: "mt-5 text-center",
-    title: "truncate text-sm font-bold",
-    artist: "mt-0.5 truncate text-xs text-white/70",
+    infoWrap: "mt-6 text-center",
+    title: "truncate text-base font-bold",
+    artist: "mt-0.5 truncate text-sm text-white/70",
     album: "truncate text-xs text-white/40",
-    controlsWrap: "mt-4 flex items-center justify-center gap-4",
-    sideButton: "h-9 w-9 rounded-full text-lg leading-none hover:bg-white/10",
+    controlsWrap: "mt-5 flex items-center justify-center gap-5",
+    sideButton: "h-10 w-10 rounded-full text-xl leading-none hover:bg-white/10",
     playButton:
-      "h-12 w-12 rounded-full bg-white text-lg leading-none text-neutral-900 transition-transform hover:scale-105",
-    emptyWrap: "mt-5 text-center text-xs text-white/60",
+      "h-14 w-14 rounded-full bg-white text-xl leading-none text-neutral-900 transition-transform hover:scale-105",
+    emptyWrap: "mt-6 text-center text-sm text-white/60",
     emptyHint: "mt-1 text-white/40",
   },
   large: {
@@ -78,8 +136,8 @@ const SIZE_CONFIG: Record<
     knob: "absolute -left-3 -top-3 h-10 w-10 rounded-full bg-neutral-400 ring-4 ring-neutral-600",
     stem: "absolute left-1/2 top-0 h-full w-1.5 -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400",
     headshell: "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
-    pivotOffsetX: 40,
-    pivotOffsetY: 32,
+    pivotRatioX: 0.114,
+    pivotRatioY: 0.091,
     toast: "pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm",
     infoWrap: "mt-8 w-full max-w-md text-center",
     title: "truncate text-xl font-bold",
@@ -107,6 +165,17 @@ export default function Turntable({
   const [now, setNow] = useState(() => Date.now());
   const turntableRef = useRef<HTMLDivElement>(null);
   const cfg = SIZE_CONFIG[size];
+
+  // 재생 중인 앨범 커버에서 뽑은 색으로 턴테이블 몸체를 물들인다. 색을 못 뽑으면 기본 회색 그대로.
+  const albumColor = useAlbumColor(nowPlaying?.coverUrl);
+  const housingStyle = albumColor
+    ? {
+        backgroundImage: `linear-gradient(to bottom right, rgb(${darken(albumColor, 0.5)}), rgb(${darken(
+          albumColor,
+          0.2
+        )}))`,
+      }
+    : undefined;
 
   // 끄는 중인 톤암 각도. 끄지 않을 때는 null.
   const [dragAngle, setDragAngle] = useState<number | null>(null);
@@ -181,8 +250,8 @@ export default function Turntable({
   // 마우스 위치를 톤암 각도로 바꾼다. 톤암 축은 턴테이블 오른쪽 위 모서리에서 안쪽에 있다.
   function angleFromPointer(clientX: number, clientY: number): number {
     const rect = turntableRef.current!.getBoundingClientRect();
-    const pivotX = rect.right - cfg.pivotOffsetX;
-    const pivotY = rect.top + cfg.pivotOffsetY;
+    const pivotX = rect.right - rect.width * cfg.pivotRatioX;
+    const pivotY = rect.top + rect.height * cfg.pivotRatioY;
     const degrees = (Math.atan2(pivotX - clientX, clientY - pivotY) * 180) / Math.PI;
     return Math.min(ARM_MAX, Math.max(ARM_MIN, degrees));
   }
@@ -207,7 +276,7 @@ export default function Turntable({
   return (
     <div>
       {/* 턴테이블 본체 */}
-      <div ref={turntableRef} className={cfg.housing}>
+      <div ref={turntableRef} className={cfg.housing} style={housingStyle}>
         <div className={cfg.vinylInset}>
           <div
             className="vinyl-spin relative h-full w-full rounded-full shadow-xl"

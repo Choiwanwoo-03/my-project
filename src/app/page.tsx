@@ -1,9 +1,4 @@
-import Link from "next/link";
-import AlbumCard from "@/components/AlbumCard";
-import SortSelect from "@/components/SortSelect";
-import GenreFilter from "@/components/GenreFilter";
-import NewAlbumButton from "@/components/NewAlbumButton";
-import HomeTurntable from "@/components/HomeTurntable";
+import HomeSplitLayout from "@/components/HomeSplitLayout";
 import { getDb } from "@/lib/mongodb";
 import { Album } from "@/types/album";
 
@@ -98,70 +93,13 @@ export default async function Home({
   ]);
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        <div className="w-full lg:w-64 lg:flex-shrink-0 lg:sticky lg:top-10">
-          <HomeTurntable />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">바이닐로그</h1>
-            <NewAlbumButton />
-          </div>
-
-          {stats.total > 0 && (
-            <div className="mb-6 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg px-4 py-3">
-              <span>
-                총 <strong className="text-gray-900">{stats.total}</strong>개
-              </span>
-              <span>
-                평균 평점 <strong className="text-gray-900">{stats.averageRating.toFixed(1)}</strong>
-              </span>
-            </div>
-          )}
-
-          <form action="/" method="GET" className="mb-6 flex flex-wrap gap-2">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="앨범명 또는 아티스트로 검색"
-              className="flex-1 min-w-[160px] sm:max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-            <button
-              type="submit"
-              className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
-            >
-              검색
-            </button>
-            <SortSelect defaultValue={sort} />
-            <GenreFilter genres={genres} defaultValue={genre} />
-            {(query || sort || genre) && (
-              <Link
-                href="/"
-                className="rounded-lg text-gray-500 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                초기화
-              </Link>
-            )}
-          </form>
-
-          {albums.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              {query || genre
-                ? "조건에 맞는 앨범이 없습니다."
-                : "아직 등록된 앨범이 없습니다."}
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {albums.map((album) => (
-                <AlbumCard key={album.id} album={album} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+    <HomeSplitLayout
+      query={query}
+      sort={sort}
+      genre={genre}
+      stats={stats}
+      genres={genres}
+      albums={albums}
+    />
   );
 }
