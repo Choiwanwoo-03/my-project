@@ -229,10 +229,12 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
     },
   };
 
-  // 메인 화면은 좌측 LP 패널에 자체 조작 버튼이 있어서 아래 바를 숨긴다.
+  // 메인 화면(좌측 LP 패널)과 LP 화면은 자체 조작 버튼이 있어서 아래 바를 숨긴다.
   const pathname = usePathname();
   const isBarVisible =
-    pathname !== "/" && (nowPlaying !== null || message !== "" || notConnected || locked);
+    pathname !== "/" &&
+    pathname !== "/player" &&
+    (nowPlaying !== null || message !== "" || notConnected || locked);
   const controlClass =
     "w-9 h-9 rounded-full text-gray-700 hover:bg-gray-100 transition-colors text-lg leading-none";
 
@@ -277,7 +279,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
                     <p className="font-medium text-gray-900 truncate">{nowPlaying.trackName}</p>
                     <p className="text-gray-500 truncate">
                       {nowPlaying.artistName} ·{" "}
-                      <Link href="/" className="font-medium text-[#1DB954] hover:underline">
+                      <Link href="/player" className="font-medium text-[#1DB954] hover:underline">
                         LP로 보기
                       </Link>
                     </p>

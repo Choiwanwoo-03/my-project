@@ -62,6 +62,14 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/components/Turntable.tsx
+- 하는 일:
+- 모르겠는 것:
+
+### src/app/player/page.tsx
+- 하는 일:
+- 모르겠는 것:
+
 ---
 
 ## C. 나머지 서버 코드
