@@ -3,7 +3,7 @@ import Turntable from "@/components/Turntable";
 
 export default function HomeTurntable() {
   return (
-    <div className="relative rounded-2xl bg-neutral-950 p-6 text-white shadow-xl">
+    <div className="relative rounded-2xl bg-neutral-950 p-4 text-white shadow-xl">
       <Link
         href="/player"
         aria-label="크게 보기"

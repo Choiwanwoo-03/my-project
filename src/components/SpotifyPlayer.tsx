@@ -100,7 +100,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
         () =>
           new Promise<string>((resolve, reject) => {
             const player = new window.Spotify!.Player({
-              name: "내 앨범 기록",
+              name: "바이닐로그",
               getOAuthToken: (callback) => {
                 fetchAccessToken().then(callback).catch(() => {});
               },
