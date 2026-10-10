@@ -266,11 +266,17 @@ export default function Turntable({
             setDragAngle(angleFromPointer(e.clientX, e.clientY));
           }}
           onPointerUp={(e) => {
+            // 명시적으로 풀어주지 않으면 포인터가 톤암에 계속 붙잡혀 있어서, 이후 다른 버튼
+            // 클릭이 전달되지 않는 경우가 있다.
+            e.currentTarget.releasePointerCapture(e.pointerId);
             if (dragAngle === null) return;
             handleDrop(angleFromPointer(e.clientX, e.clientY));
             setDragAngle(null);
           }}
-          onPointerCancel={() => setDragAngle(null)}
+          onPointerCancel={(e) => {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            setDragAngle(null);
+          }}
           className={`${cfg.tonearmBase} origin-top touch-none ${
             dragAngle === null ? "transition-transform duration-1000 ease-in-out" : ""
           } ${nowPlaying ? (dragAngle === null ? "cursor-grab" : "cursor-grabbing") : ""}`}
