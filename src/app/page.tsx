@@ -1,9 +1,7 @@
-import Link from "next/link";
 import AlbumCard from "@/components/AlbumCard";
-import SortSelect from "@/components/SortSelect";
-import GenreFilter from "@/components/GenreFilter";
 import NewAlbumButton from "@/components/NewAlbumButton";
 import HomeTurntable from "@/components/HomeTurntable";
+import SearchFilterBar from "@/components/SearchFilterBar";
 import { getDb } from "@/lib/mongodb";
 import { Album } from "@/types/album";
 
@@ -121,31 +119,7 @@ export default async function Home({
             </div>
           )}
 
-          <form action="/" method="GET" className="mb-6 flex flex-wrap gap-2">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="앨범명 또는 아티스트로 검색"
-              className="flex-1 min-w-[160px] sm:max-w-xs rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-            <button
-              type="submit"
-              className="rounded-lg border border-gray-300 text-gray-700 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
-            >
-              검색
-            </button>
-            <SortSelect defaultValue={sort} />
-            <GenreFilter genres={genres} defaultValue={genre} />
-            {(query || sort || genre) && (
-              <Link
-                href="/"
-                className="rounded-lg text-gray-500 text-sm font-medium px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                초기화
-              </Link>
-            )}
-          </form>
+          <SearchFilterBar query={query} sort={sort} genre={genre} genres={genres} />
 
           {albums.length === 0 ? (
             <p className="text-sm text-gray-500">

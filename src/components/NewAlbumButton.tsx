@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SpotifyAlbumResult } from "@/lib/spotify";
 import SpotifySearch from "@/components/SpotifySearch";
 
@@ -22,6 +23,7 @@ export default function NewAlbumButton() {
 }
 
 function NewAlbumModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [releaseDate, setReleaseDate] = useState("");
@@ -47,11 +49,6 @@ function NewAlbumModal({ onClose }: { onClose: () => void }) {
     setError("");
     // 이미지 업로드부터 앨범 저장까지 끝날 때까지 버튼을 막아서, 연타해도 두 번 등록되지 않게 한다.
     setSubmitting(true);
-    // window.location.href는 페이지 이동을 "시작"만 하고 바로 다음 줄로 넘어간다.
-    // 그래서 저장에 성공한 뒤 finally에서 무조건 버튼을 풀면, 새 목록 화면이 실제로
-    // 뜨기 전(서버가 MongoDB를 조회하는 그 짧은 시간) 버튼이 다시 눌려 두 번 등록될 수 있다.
-    // leaving이 true면(=이동을 시작했으면) finally에서 버튼을 풀지 않는다.
-    let leaving = false;
 
     try {
       let coverImageUrl = spotifyCoverUrl;
@@ -66,6 +63,7 @@ function NewAlbumModal({ onClose }: { onClose: () => void }) {
               ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
               : "이미지 업로드에 실패했습니다."
           );
+          setSubmitting(false);
           return;
         }
         ({ url: coverImageUrl } = await uploadRes.json());
@@ -83,18 +81,20 @@ function NewAlbumModal({ onClose }: { onClose: () => void }) {
             ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
             : "저장에 실패했습니다. 다시 시도해 주세요."
         );
+        setSubmitting(false);
         return;
       }
 
-      leaving = true;
-      // 모달을 닫고 목록을 새로 그리는 가장 간단하고 확실한 방법 — 같은 주소로 다시 이동해도
-      // 브라우저는 전체 새로고침을 한다. router.push/refresh 조합이 배포 환경에서
-      // 경쟁 상태를 일으켰던 적이 있어(등록·수정·삭제 공통) 이 방식을 그대로 따른다.
-      window.location.href = "/";
+      // 모달을 바로 닫고(버튼이 사라지니 다시 눌릴 틈도 없다) 목록만 서버에서 다시 불러온다.
+      // 예전엔 window.location.href로 완전 새로고침을 했는데, 그러면 재생 중이던 음악까지
+      // 끊겼다. 등록·수정·삭제가 전부 모달이라 페이지 이동 자체가 필요 없어졌으므로,
+      // router.push 없이 router.refresh()만 쓴다 — 과거 경쟁 상태는 push+refresh 조합에서
+      // 난 것이라 이 방식은 영향받지 않는다.
+      router.refresh();
+      onClose();
     } catch {
       setError("네트워크 오류로 저장하지 못했습니다. 다시 시도해 주세요.");
-    } finally {
-      if (!leaving) setSubmitting(false);
+      setSubmitting(false);
     }
   }
 
