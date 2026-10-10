@@ -34,7 +34,15 @@ export default function SearchFilterBar({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 flex flex-wrap gap-2">
+    <form
+      // query/sort/genre가 바뀔 때마다 폼을 통째로 다시 마운트해서, defaultValue로 되어 있는
+      // 아래 비제어 입력들(검색창·SortSelect·GenreFilter)이 새 값으로 다시 초기화되게 한다.
+      // 지금은 검색/필터가 전체 새로고침 없이 클라이언트 라우팅만 하기 때문에, key가 없으면
+      // "초기화" 링크나 브라우저 뒤로가기를 눌러도 입력창에 이전 글자가 그대로 남아있는다.
+      key={`${query}|${sort}|${genre}`}
+      onSubmit={handleSubmit}
+      className="mb-6 flex flex-wrap gap-2"
+    >
       <input
         type="text"
         name="q"
