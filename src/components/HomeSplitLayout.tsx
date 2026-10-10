@@ -74,7 +74,7 @@ export default function HomeSplitLayout({
       className={`flex flex-col lg:flex-row lg:h-screen ${dragging ? "select-none" : ""}`}
     >
       <div
-        className="w-full bg-indigo-950 px-6 py-8 lg:flex-shrink-0 lg:overflow-y-auto"
+        className="w-full bg-neutral-950 p-4 lg:flex-shrink-0 lg:overflow-y-auto"
         style={{
           ...(isDesktop ? { width: `${leftPercent}%` } : {}),
           ...panelColorStyle,
