@@ -7,6 +7,8 @@ import SortSelect from "@/components/SortSelect";
 import GenreFilter from "@/components/GenreFilter";
 import NewAlbumButton from "@/components/NewAlbumButton";
 import HomeTurntable from "@/components/HomeTurntable";
+import { usePlayer } from "@/components/SpotifyPlayer";
+import { useAlbumColor, darken } from "@/lib/albumColor";
 import { Album } from "@/types/album";
 
 const DEFAULT_LEFT_PERCENT = 40;
@@ -33,6 +35,18 @@ export default function HomeSplitLayout({
   genres: string[];
   albums: Album[];
 }) {
+  const { nowPlaying } = usePlayer();
+  // 재생 중인 곡이 있으면 왼쪽 패널 배경도 턴테이블 몸체와 같은 앨범 색 톤으로 물든다.
+  const albumColor = useAlbumColor(nowPlaying?.coverUrl);
+  const panelColorStyle = albumColor
+    ? {
+        backgroundImage: `linear-gradient(to bottom right, rgb(${darken(albumColor, 0.5)}), rgb(${darken(
+          albumColor,
+          0.2
+        )}))`,
+      }
+    : undefined;
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftPercent, setLeftPercent] = useState(DEFAULT_LEFT_PERCENT);
   const [dragging, setDragging] = useState(false);
@@ -62,10 +76,13 @@ export default function HomeSplitLayout({
       className={`flex flex-col lg:flex-row lg:h-screen ${dragging ? "select-none" : ""}`}
     >
       <div
-        className="w-full px-6 py-8 lg:flex-shrink-0 lg:overflow-y-auto"
-        style={isDesktop ? { width: `${leftPercent}%` } : undefined}
+        className="w-full bg-indigo-950 px-6 py-8 lg:flex-shrink-0 lg:overflow-y-auto"
+        style={{
+          ...(isDesktop ? { width: `${leftPercent}%` } : {}),
+          ...panelColorStyle,
+        }}
       >
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">바이닐로그</h1>
+        <h1 className="mb-6 text-2xl font-bold text-white">바이닐로그</h1>
         <HomeTurntable />
       </div>
 

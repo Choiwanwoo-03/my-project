@@ -2,10 +2,18 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlayer } from "@/components/SpotifyPlayer";
+import { useAlbumColor, darken } from "@/lib/albumColor";
 
-// LP 표면의 가는 홈(groove)을 동심원 무늬로 표현한다.
-const VINYL_GROOVES =
-  "repeating-radial-gradient(circle at center, #111 0px, #111 2px, #1d1d1d 3px, #111 4px)";
+// LP 표면의 가는 홈(groove)을 동심원 무늬로 표현한다. 앨범 색이 있으면 아주 어둡게 물들이고
+// (실제 비닐처럼 거의 검게 보이되 은은한 색감만 남게), 없으면 기본 검정/회색 홈을 쓴다.
+function vinylGrooves(albumColor: string | null): string {
+  if (!albumColor) {
+    return "repeating-radial-gradient(circle at center, #111 0px, #111 2px, #1d1d1d 3px, #111 4px)";
+  }
+  const groove = darken(albumColor, 0.08);
+  const ridge = darken(albumColor, 0.14);
+  return `repeating-radial-gradient(circle at center, rgb(${groove}) 0px, rgb(${groove}) 2px, rgb(${ridge}) 3px, rgb(${groove}) 4px)`;
+}
 
 // 판 위의 빛 반사. 판과 같이 돌면 어색해서 회전하지 않는 별도 층으로 둔다.
 const VINYL_SHEEN =
@@ -21,60 +29,6 @@ const ARM_MAX = 44;
 
 const SEEK_STEP_MS = 5000;
 const VOLUME_STEP = 0.1;
-
-// 커버 이미지를 작게 그려서 픽셀을 평균 낸, 그 앨범을 대표하는 색("r g b" 문자열).
-// CORS 때문에 캔버스를 못 읽으면(또는 이미지가 없으면) null — 그때는 기본 회색 턴테이블로 보여준다.
-function useAlbumColor(imageUrl: string | undefined): string | null {
-  const [color, setColor] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!imageUrl) {
-      setColor(null);
-      return;
-    }
-    let cancelled = false;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      if (cancelled) return;
-      try {
-        const size = 24;
-        const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(img, 0, 0, size, size);
-        const { data } = ctx.getImageData(0, 0, size, size);
-        let r = 0;
-        let g = 0;
-        let b = 0;
-        const pixelCount = data.length / 4;
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
-        }
-        setColor(`${Math.round(r / pixelCount)} ${Math.round(g / pixelCount)} ${Math.round(b / pixelCount)}`);
-      } catch {
-        setColor(null);
-      }
-    };
-    img.onerror = () => setColor(null);
-    img.src = imageUrl;
-    return () => {
-      cancelled = true;
-    };
-  }, [imageUrl]);
-
-  return color;
-}
-
-// "r g b" 문자열을 지정한 비율만큼 어둡게 만든다(턴테이블 몸체는 은은하게 어두운 톤이어야 하니까).
-function darken(rgb: string, factor: number): string {
-  const [r, g, b] = rgb.split(" ").map(Number);
-  return `${Math.round(r * factor)} ${Math.round(g * factor)} ${Math.round(b * factor)}`;
-}
 
 type Size = "compact" | "large";
 
@@ -139,7 +93,7 @@ const SIZE_CONFIG: Record<
     pivotRatioX: 0.114,
     pivotRatioY: 0.091,
     toast: "pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm",
-    infoWrap: "mt-8 w-full max-w-md text-center",
+    infoWrap: "mx-auto mt-8 w-full max-w-md text-center",
     title: "truncate text-xl font-bold",
     artist: "mt-1 truncate text-white/70",
     album: "truncate text-sm text-white/40",
@@ -280,7 +234,10 @@ export default function Turntable({
         <div className={cfg.vinylInset}>
           <div
             className="vinyl-spin relative h-full w-full rounded-full shadow-xl"
-            style={{ background: VINYL_GROOVES, animationPlayState: isPlaying ? "running" : "paused" }}
+            style={{
+              background: vinylGrooves(albumColor),
+              animationPlayState: isPlaying ? "running" : "paused",
+            }}
           >
             {/* 가운데 라벨: 앨범 커버 */}
             <div className="absolute inset-[33%] overflow-hidden rounded-full bg-neutral-700 ring-4 ring-black/40">
