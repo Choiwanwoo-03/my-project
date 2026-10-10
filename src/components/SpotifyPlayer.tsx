@@ -36,6 +36,9 @@ const LOCKED = "LOCKED";
 const SDK_URL = "https://sdk.scdn.co/spotify-player.js";
 // 새로고침·탭 닫기 전 재생 상태를 기억해 뒀다가, 다시 들어오면 그 자리부터 이어서 들을 수 있게 한다.
 const RESUME_STORAGE_KEY = "vinylog:resume";
+// 일시정지 상태에서 재생을 눌렀는데 이 시간 안에 실제로 재생 상태로 안 바뀌면, 기기가 쉬는 동안
+// 잠들어서 togglePlay 요청을 조용히 무시한 것으로 보고 같은 곡을 새로 재생 요청해서 깨운다.
+const RESUME_WATCHDOG_MS = 1500;
 
 type ResumeSnapshot = {
   trackId: string;
@@ -124,6 +127,9 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
   const playerRef = useRef<SpotifyPlayer | null>(null);
   const deviceIdRef = useRef<Promise<string> | null>(null);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  // setTimeout 콜백 안에서도 항상 최신 nowPlaying을 읽을 수 있도록 state와 같이 맞춰 둔다.
+  const nowPlayingRef = useRef<NowPlaying | null>(null);
+  nowPlayingRef.current = nowPlaying;
   const [message, setMessage] = useState("");
   const [notConnected, setNotConnected] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -337,7 +343,26 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
         resumeFromSnapshot(resumeSnapshotRef.current);
         return;
       }
+      const current = nowPlayingRef.current;
       playerRef.current?.togglePlay();
+      // 일시정지 → 재생으로 바뀌는 경우에만 워치독을 건다(재생 → 일시정지는 이 문제가 없었다).
+      if (current?.paused && current.trackIds[0]) {
+        const snapshot: ResumeSnapshot = {
+          trackId: current.trackIds[0],
+          trackName: current.trackName,
+          artistName: current.artistName,
+          albumName: current.albumName,
+          coverUrl: current.coverUrl,
+          positionMs: current.positionMs,
+          durationMs: current.durationMs,
+        };
+        setTimeout(() => {
+          // 그사이 실제로 재생 상태로 바뀌었다면(정상 동작) 아무것도 안 한다.
+          if (nowPlayingRef.current?.paused) {
+            resumeFromSnapshot(snapshot);
+          }
+        }, RESUME_WATCHDOG_MS);
+      }
     },
     nextTrack: () => playerRef.current?.nextTrack(),
     previousTrack: () => playerRef.current?.previousTrack(),
