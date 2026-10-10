@@ -50,6 +50,10 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/components/HomeSplitLayout.tsx
+- 하는 일:
+- 모르겠는 것:
+
 ### src/components/AlbumDetailModal.tsx
 - 하는 일:
 - 모르겠는 것:
@@ -158,6 +162,10 @@
 - 하는 일:
 - 모르겠는 것:
 
+### src/components/SearchFilterBar.tsx
+- 하는 일:
+- 모르겠는 것:
+
 ### src/components/DeleteAlbumButton.tsx
 - 하는 일:
 - 모르겠는 것:
@@ -167,6 +175,10 @@
 ## F. 도우미 파일
 
 ### src/lib/gradient.ts
+- 하는 일:
+- 모르겠는 것:
+
+### src/lib/albumColor.ts
 - 하는 일:
 - 모르겠는 것:
 
