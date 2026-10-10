@@ -1,8 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function DeleteAlbumButton({ albumId }: { albumId: string }) {
+export default function DeleteAlbumButton({
+  albumId,
+  onDeleted,
+}: {
+  albumId: string;
+  // 삭제된 앨범은 더 이상 모달에 보여줄 수 없으니, 호출한 쪽에서 모달을 닫도록 알려준다.
+  onDeleted?: () => void;
+}) {
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,9 +28,10 @@ export default function DeleteAlbumButton({ albumId }: { albumId: string }) {
       return;
     }
 
-    // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
-    // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
-    window.location.href = "/";
+    // 예전엔 window.location.href로 완전 새로고침을 했는데, 그러면 재생 중이던 음악까지 끊겼다.
+    // 삭제도 이제 모달 안에서 끝나는 동작이라 페이지 이동이 필요 없다 — 목록만 다시 불러온다.
+    router.refresh();
+    onDeleted?.();
   }
 
   if (confirming) {

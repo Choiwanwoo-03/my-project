@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Album } from "@/types/album";
 import type { SpotifyAlbumResult, SpotifyTrack } from "@/lib/spotify";
 import { gradientFor } from "@/lib/gradient";
@@ -74,7 +75,7 @@ export default function AlbumDetailModal({
         )}
 
         {state.status === "ready" && mode === "edit" && (
-          <AlbumEditForm album={state.album} onCancel={() => setMode("view")} />
+          <AlbumEditForm album={state.album} onCancel={() => setMode("view")} onSaved={onClose} />
         )}
       </div>
     </div>
@@ -141,7 +142,7 @@ function AlbumView({
             >
               수정
             </button>
-            <DeleteAlbumButton albumId={album.id} />
+            <DeleteAlbumButton albumId={album.id} onDeleted={onClose} />
           </div>
 
           {album.spotifyUrl && (
@@ -169,7 +170,17 @@ function AlbumView({
   );
 }
 
-function AlbumEditForm({ album, onCancel }: { album: Album; onCancel: () => void }) {
+function AlbumEditForm({
+  album,
+  onCancel,
+  onSaved,
+}: {
+  album: Album;
+  onCancel: () => void;
+  // 저장이 끝나면 더 이상 edit 모드로 남아있을 이유가 없으니, 모달 자체를 닫도록 알려준다.
+  onSaved: () => void;
+}) {
+  const router = useRouter();
   const [title, setTitle] = useState(album.title);
   const [artist, setArtist] = useState(album.artist);
   const [releaseDate, setReleaseDate] = useState(album.releaseDate);
@@ -198,11 +209,6 @@ function AlbumEditForm({ album, onCancel }: { album: Album; onCancel: () => void
     setError("");
     // 이미지 업로드부터 앨범 저장까지 끝날 때까지 버튼을 막아서, 연타해도 두 번 저장되지 않게 한다.
     setSubmitting(true);
-    // window.location.href는 페이지 이동을 "시작"만 하고 바로 다음 줄로 넘어간다.
-    // 그래서 저장에 성공한 뒤 finally에서 무조건 버튼을 풀면, 새 목록 화면이 실제로
-    // 뜨기 전(서버가 MongoDB를 조회하는 그 짧은 시간) 버튼이 다시 눌려 두 번 저장될 수 있다.
-    // leaving이 true면(=이동을 시작했으면) finally에서 버튼을 풀지 않는다.
-    let leaving = false;
 
     try {
       let coverImageUrl = currentCoverUrl;
@@ -217,6 +223,7 @@ function AlbumEditForm({ album, onCancel }: { album: Album; onCancel: () => void
               ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
               : "이미지 업로드에 실패했습니다."
           );
+          setSubmitting(false);
           return;
         }
         ({ url: coverImageUrl } = await uploadRes.json());
@@ -234,17 +241,20 @@ function AlbumEditForm({ album, onCancel }: { album: Album; onCancel: () => void
             ? "잠금이 걸려 있어 수정할 수 없습니다. 재생 잠금을 먼저 해제하세요."
             : "수정에 실패했습니다. 다시 시도해 주세요."
         );
+        setSubmitting(false);
         return;
       }
 
-      leaving = true;
-      // router.push + router.refresh 조합이 배포 환경에서 경쟁 상태를 일으켜
-      // 완전한 페이지 이동으로 클라이언트 라우터 캐시를 아예 우회한다.
-      window.location.href = "/";
+      // 모달을 바로 닫고(버튼이 사라지니 다시 눌릴 틈도 없다) 목록만 서버에서 다시 불러온다.
+      // 예전엔 window.location.href로 완전 새로고침을 했는데, 그러면 재생 중이던 음악까지
+      // 끊겼다. 등록·수정·삭제가 전부 모달이라 페이지 이동 자체가 필요 없어졌으므로,
+      // router.push 없이 router.refresh()만 쓴다 — 과거 경쟁 상태는 push+refresh 조합에서
+      // 난 것이라 이 방식은 영향받지 않는다.
+      router.refresh();
+      onSaved();
     } catch {
       setError("네트워크 오류로 수정하지 못했습니다. 다시 시도해 주세요.");
-    } finally {
-      if (!leaving) setSubmitting(false);
+      setSubmitting(false);
     }
   }
 
