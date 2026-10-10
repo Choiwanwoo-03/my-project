@@ -181,7 +181,10 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
             player.addListener("player_state_changed", (state) => {
               if (!state) {
                 setNowPlaying(null);
-                saveResumeSnapshot(null);
+                // 저장해 둔 이어 듣기 스냅샷은 여기서 지우지 않는다. 기기가 막 연결된 직후에도
+                // 이 콜백이 상태 없음으로 한 번 불릴 때가 있는데, 그때 지워버리면 새로고침 직후
+                // 이어 듣기 정보가 통째로 사라진다. 실제로 새 곡이 재생되면 그때 최신 정보로
+                // 덮어쓰이니, 여기서는 지금 화면에 보여줄 상태만 비운다.
                 return;
               }
               // 실제 SDK 상태가 들어왔으니 더 이상 '이어 듣기 대기' 상태가 아니다.
