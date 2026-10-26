@@ -9,7 +9,7 @@ export async function GET() {
   if (lock === "misconfigured") {
     return NextResponse.json(
       { error: "PLAYER_PASSWORD 환경변수가 설정되지 않았습니다." },
-      { status: 500 }
+      { status: 500 },
     );
   }
   if (lock === "locked") {

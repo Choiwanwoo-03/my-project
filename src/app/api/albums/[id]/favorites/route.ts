@@ -6,10 +6,7 @@ import { SPOTIFY_ID_PATTERN } from "@/lib/spotify";
 
 type FavoritesDoc = { favoriteTrackIds: string[] };
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   if (getPlayerLockState() !== "unlocked") {
     return NextResponse.json({ error: "잠금을 먼저 해제해야 합니다." }, { status: 401 });
   }

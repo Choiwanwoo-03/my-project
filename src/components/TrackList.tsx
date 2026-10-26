@@ -9,7 +9,10 @@ const EQ_BAR_DELAYS = [0, 0.25, 0.5];
 // 지금 나오는 곡 옆에 그리는 움직이는 막대. 일시정지하면 그 모양 그대로 멈춘다.
 function Equalizer({ paused }: { paused: boolean }) {
   return (
-    <span className="inline-flex h-3 items-end gap-[2px]" aria-label={paused ? "일시정지됨" : "재생 중"}>
+    <span
+      className="inline-flex h-3 items-end gap-[2px]"
+      aria-label={paused ? "일시정지됨" : "재생 중"}
+    >
       {EQ_BAR_DELAYS.map((delay) => (
         <span
           key={delay}
@@ -61,7 +64,7 @@ export default function TrackList({
 
     // 서버 응답을 기다리지 않고 별을 먼저 바꾸고, 저장에 실패하면 원래대로 되돌린다.
     setFavoriteIds(
-      favorite ? [...favoriteIds, trackId] : favoriteIds.filter((id) => id !== trackId)
+      favorite ? [...favoriteIds, trackId] : favoriteIds.filter((id) => id !== trackId),
     );
 
     const res = await fetch(`/api/albums/${albumId}/favorites`, {
@@ -74,7 +77,7 @@ export default function TrackList({
       alert(
         res.status === 401
           ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-          : "최애곡 저장에 실패했습니다."
+          : "최애곡 저장에 실패했습니다.",
       );
     }
   }

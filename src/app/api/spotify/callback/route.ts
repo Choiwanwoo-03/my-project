@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (!code || !state || state !== savedState) {
     return NextResponse.json(
       { error: "Spotify 연결 확인에 실패했습니다. 다시 시도해 주세요." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

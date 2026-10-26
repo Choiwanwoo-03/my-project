@@ -168,7 +168,9 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
             const player = new window.Spotify!.Player({
               name: "바이닐로그",
               getOAuthToken: (callback) => {
-                fetchAccessToken().then(callback).catch(() => {});
+                fetchAccessToken()
+                  .then(callback)
+                  .catch(() => {});
               },
               volume: 0.5,
             });
@@ -176,7 +178,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
             player.addListener("initialization_error", ({ message }) => reject(new Error(message)));
             player.addListener("authentication_error", ({ message }) => reject(new Error(message)));
             player.addListener("account_error", () =>
-              reject(new Error("Spotify Premium 계정이 필요합니다."))
+              reject(new Error("Spotify Premium 계정이 필요합니다.")),
             );
             player.addListener("player_state_changed", (state) => {
               if (!state) {
@@ -196,7 +198,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
               const coverUrl = track.album.images[0]?.url ?? "";
               setNowPlaying({
                 trackIds: [track.id, track.linked_from?.id].filter(
-                  (id): id is string => typeof id === "string"
+                  (id): id is string => typeof id === "string",
                 ),
                 trackName,
                 artistName,
@@ -222,7 +224,7 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
             });
             player.connect();
             playerRef.current = player;
-          })
+          }),
       )
       .catch((error) => {
         // 준비에 실패한 플레이어는 버리고, 다음에 누르면 처음부터 다시 만든다.
@@ -234,11 +236,19 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
     return deviceIdRef.current;
   }
 
-  async function requestPlay(token: string, deviceId: string, albumSpotifyId: string, position: number) {
+  async function requestPlay(
+    token: string,
+    deviceId: string,
+    albumSpotifyId: string,
+    position: number,
+  ) {
     return fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ context_uri: `spotify:album:${albumSpotifyId}`, offset: { position } }),
+      body: JSON.stringify({
+        context_uri: `spotify:album:${albumSpotifyId}`,
+        offset: { position },
+      }),
     });
   }
 
@@ -407,7 +417,10 @@ export default function SpotifyPlayerProvider({ children }: { children: React.Re
               {notConnected ? (
                 <span className="text-gray-600">
                   Spotify 계정이 아직 연결되지 않았습니다.{" "}
-                  <a href="/api/spotify/login" className="font-medium text-[#1DB954] hover:underline">
+                  <a
+                    href="/api/spotify/login"
+                    className="font-medium text-[#1DB954] hover:underline"
+                  >
                     연결하기
                   </a>
                 </span>

@@ -23,7 +23,7 @@ export default function DeleteAlbumButton({
       setError(
         res.status === 401
           ? "잠금이 걸려 있어 삭제할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-          : "삭제에 실패했습니다. 다시 시도해 주세요."
+          : "삭제에 실패했습니다. 다시 시도해 주세요.",
       );
       return;
     }
