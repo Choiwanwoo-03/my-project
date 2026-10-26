@@ -61,7 +61,7 @@ function NewAlbumModal({ onClose }: { onClose: () => void }) {
           setError(
             uploadRes.status === 401
               ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-              : "이미지 업로드에 실패했습니다."
+              : "이미지 업로드에 실패했습니다.",
           );
           setSubmitting(false);
           return;
@@ -72,14 +72,22 @@ function NewAlbumModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/albums", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
+        body: JSON.stringify({
+          title,
+          artist,
+          releaseDate,
+          rating,
+          genre,
+          coverImageUrl,
+          spotifyId,
+        }),
       });
 
       if (!res.ok) {
         setError(
           res.status === 401
             ? "잠금이 걸려 있어 저장할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-            : "저장에 실패했습니다. 다시 시도해 주세요."
+            : "저장에 실패했습니다. 다시 시도해 주세요.",
         );
         setSubmitting(false);
         return;

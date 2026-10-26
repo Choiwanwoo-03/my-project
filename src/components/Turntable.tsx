@@ -67,10 +67,12 @@ const SIZE_CONFIG: Record<
     tonearmBase: "absolute right-[8%] top-[8%] h-[78%] w-3.5",
     knob: "absolute -left-2.5 -top-2.5 h-9 w-9 rounded-full bg-neutral-400 ring-4 ring-neutral-600",
     stem: "absolute left-1/2 top-0 h-full w-2 -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400",
-    headshell: "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
+    headshell:
+      "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
     pivotRatioX: 0.118,
     pivotRatioY: 0.09,
-    toast: "pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-xs",
+    toast:
+      "pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-3 py-1 text-xs",
     infoWrap: "mt-6 text-center",
     title: "truncate text-base font-bold",
     artist: "mt-0.5 truncate text-sm text-white/70",
@@ -89,10 +91,12 @@ const SIZE_CONFIG: Record<
     tonearmBase: "absolute right-8 top-8 h-[15rem] w-4 sm:h-[18rem]",
     knob: "absolute -left-3 -top-3 h-10 w-10 rounded-full bg-neutral-400 ring-4 ring-neutral-600",
     stem: "absolute left-1/2 top-0 h-full w-1.5 -translate-x-1/2 rounded-full bg-gradient-to-b from-neutral-300 to-neutral-400",
-    headshell: "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
+    headshell:
+      "absolute bottom-0 left-1/2 h-8 w-5 -translate-x-1/2 translate-y-2 rounded-sm bg-neutral-300",
     pivotRatioX: 0.114,
     pivotRatioY: 0.091,
-    toast: "pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm",
+    toast:
+      "pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm",
     infoWrap: "mx-auto mt-8 w-full max-w-md text-center",
     title: "truncate text-xl font-bold",
     artist: "mt-1 truncate text-white/70",
@@ -126,7 +130,7 @@ export default function Turntable({
     ? {
         backgroundImage: `linear-gradient(to bottom right, rgb(${darken(albumColor, 0.5)}), rgb(${darken(
           albumColor,
-          0.2
+          0.2,
         )}))`,
       }
     : undefined;
@@ -184,7 +188,7 @@ export default function Turntable({
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault();
         changeVolume(e.key === "ArrowUp" ? VOLUME_STEP : -VOLUME_STEP).then((volume) =>
-          showToast(`볼륨 ${Math.round(volume * 100)}%`)
+          showToast(`볼륨 ${Math.round(volume * 100)}%`),
         );
       }
     }

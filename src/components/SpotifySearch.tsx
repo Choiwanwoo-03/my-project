@@ -3,11 +3,7 @@
 import { useState } from "react";
 import type { SpotifyAlbumResult } from "@/lib/spotify";
 
-export default function SpotifySearch({
-  onPick,
-}: {
-  onPick: (album: SpotifyAlbumResult) => void;
-}) {
+export default function SpotifySearch({ onPick }: { onPick: (album: SpotifyAlbumResult) => void }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SpotifyAlbumResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -74,7 +70,11 @@ export default function SpotifySearch({
               >
                 {album.coverImageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={album.coverImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                  <img
+                    src={album.coverImageUrl}
+                    alt=""
+                    className="w-10 h-10 rounded object-cover"
+                  />
                 )}
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-gray-900 truncate">

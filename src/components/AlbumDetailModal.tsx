@@ -18,7 +18,9 @@ export default function AlbumDetailModal({
   onClose: () => void;
 }) {
   const [state, setState] = useState<
-    { status: "loading" } | { status: "error" } | { status: "ready"; album: Album; tracks: SpotifyTrack[] }
+    | { status: "loading" }
+    | { status: "error" }
+    | { status: "ready"; album: Album; tracks: SpotifyTrack[] }
   >({ status: "loading" });
   const [mode, setMode] = useState<"view" | "edit">("view");
 
@@ -96,7 +98,12 @@ function AlbumView({
   return (
     <div>
       <div className="flex justify-end">
-        <button type="button" onClick={onClose} aria-label="닫기" className="text-gray-400 hover:text-gray-600">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+          className="text-gray-400 hover:text-gray-600"
+        >
           ✕
         </button>
       </div>
@@ -221,7 +228,7 @@ function AlbumEditForm({
           setError(
             uploadRes.status === 401
               ? "잠금이 걸려 있어 업로드할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-              : "이미지 업로드에 실패했습니다."
+              : "이미지 업로드에 실패했습니다.",
           );
           setSubmitting(false);
           return;
@@ -232,14 +239,22 @@ function AlbumEditForm({
       const res = await fetch(`/api/albums/${album.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId }),
+        body: JSON.stringify({
+          title,
+          artist,
+          releaseDate,
+          rating,
+          genre,
+          coverImageUrl,
+          spotifyId,
+        }),
       });
 
       if (!res.ok) {
         setError(
           res.status === 401
             ? "잠금이 걸려 있어 수정할 수 없습니다. 재생 잠금을 먼저 해제하세요."
-            : "수정에 실패했습니다. 다시 시도해 주세요."
+            : "수정에 실패했습니다. 다시 시도해 주세요.",
         );
         setSubmitting(false);
         return;

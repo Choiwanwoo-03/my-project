@@ -35,7 +35,9 @@ export function useAlbumColor(imageUrl: string | undefined): string | null {
           g += data[i + 1];
           b += data[i + 2];
         }
-        setColor(`${Math.round(r / pixelCount)} ${Math.round(g / pixelCount)} ${Math.round(b / pixelCount)}`);
+        setColor(
+          `${Math.round(r / pixelCount)} ${Math.round(g / pixelCount)} ${Math.round(b / pixelCount)}`,
+        );
       } catch {
         setColor(null);
       }

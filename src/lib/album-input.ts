@@ -14,9 +14,7 @@ export type AlbumInput = {
   spotifyUrl: string;
 };
 
-export type ParseResult =
-  | { ok: true; data: AlbumInput }
-  | { ok: false; error: string };
+export type ParseResult = { ok: true; data: AlbumInput } | { ok: false; error: string };
 
 // POST(등록)와 PUT(수정)이 같이 쓰는 입력 검증. 값이 있는지뿐 아니라 타입·범위·형식까지 확인해서,
 // 이상한 값이 DB에 들어가 목록 화면을 통째로 깨뜨리는 일을 막는다.
@@ -24,8 +22,10 @@ export function parseAlbumInput(body: unknown): ParseResult {
   if (typeof body !== "object" || body === null) {
     return { ok: false, error: "잘못된 요청입니다." };
   }
-  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId } =
-    body as Record<string, unknown>;
+  const { title, artist, releaseDate, rating, genre, coverImageUrl, spotifyId } = body as Record<
+    string,
+    unknown
+  >;
 
   if (typeof title !== "string" || title.trim().length === 0 || title.length > MAX_TEXT_LENGTH) {
     return { ok: false, error: "앨범명을 확인하세요." };
@@ -47,11 +47,18 @@ export function parseAlbumInput(body: unknown): ParseResult {
     safeReleaseDate = releaseDate;
   }
 
-  if (genre !== undefined && genre !== "" && (typeof genre !== "string" || genre.length > MAX_TEXT_LENGTH)) {
+  if (
+    genre !== undefined &&
+    genre !== "" &&
+    (typeof genre !== "string" || genre.length > MAX_TEXT_LENGTH)
+  ) {
     return { ok: false, error: "장르를 확인하세요." };
   }
 
-  if (coverImageUrl && (typeof coverImageUrl !== "string" || !coverImageUrl.startsWith("https://"))) {
+  if (
+    coverImageUrl &&
+    (typeof coverImageUrl !== "string" || !coverImageUrl.startsWith("https://"))
+  ) {
     return { ok: false, error: "잘못된 이미지 주소입니다." };
   }
 
