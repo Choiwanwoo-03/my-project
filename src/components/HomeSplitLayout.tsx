@@ -40,7 +40,7 @@ export default function HomeSplitLayout({
     ? {
         backgroundImage: `linear-gradient(to bottom right, rgb(${darken(albumColor, 0.5)}), rgb(${darken(
           albumColor,
-          0.2
+          0.2,
         )}))`,
       }
     : undefined;

@@ -27,14 +27,17 @@ interface SpotifyPlayer {
   setVolume(volume: number): Promise<void>;
   nextTrack(): Promise<void>;
   previousTrack(): Promise<void>;
-  addListener(event: "ready" | "not_ready", callback: (data: { device_id: string }) => void): boolean;
+  addListener(
+    event: "ready" | "not_ready",
+    callback: (data: { device_id: string }) => void,
+  ): boolean;
   addListener(
     event: "player_state_changed",
-    callback: (state: SpotifyPlayerState | null) => void
+    callback: (state: SpotifyPlayerState | null) => void,
   ): boolean;
   addListener(
     event: "initialization_error" | "authentication_error" | "account_error" | "playback_error",
-    callback: (error: { message: string }) => void
+    callback: (error: { message: string }) => void,
   ): boolean;
 }
 

@@ -10,7 +10,7 @@ export function GET(request: Request) {
   if (!clientId || !redirectUriEnv) {
     return NextResponse.json(
       { error: "SPOTIFY_CLIENT_ID / SPOTIFY_REDIRECT_URI 환경변수가 없습니다." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
