@@ -1,0 +1,65 @@
+# PR이 올라오거나 커밋이 추가될 때마다 lint·test·build를 검사한다.
+# job 이름(lint/test/build)은 브랜치 Ruleset의 필수 검사 이름과 같아야 하므로 바꿀 때 함께 바꾼다.
+# Codex 리뷰는 자동으로 돌리지 않고, 필요할 때 PR 댓글에 `@codex review`를 남겨 요청한다.
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+# 같은 PR에 커밋이 연달아 올라오면 이전 실행은 취소한다.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier
+        run: npm run format:check
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    # src/lib/mongodb.ts가 import 시점에 MONGODB_URI를 요구하고 바로 connect()를 시도하므로,
+    # 실제 DB 대신 빈 MongoDB 컨테이너를 띄워 build가 연결 오류 없이 끝나게 한다.
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+    env:
+      MONGODB_URI: mongodb://localhost:27017
+      MONGODB_DB: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
