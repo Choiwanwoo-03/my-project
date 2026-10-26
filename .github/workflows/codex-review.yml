@@ -1,0 +1,189 @@
+# PR 댓글에 `/codex-review`를 남기면 Codex가 diff를 리뷰해 댓글로 남긴다.
+# lint·test·build(ci.yml)가 해당 커밋에서 모두 통과했을 때만 리뷰하고, 아니면 검사 상태만 알려준다.
+#
+# - issue_comment 이벤트는 기본 브랜치(main)에 있는 이 파일로 실행된다. main에 머지돼야 동작한다.
+# - 레포 Settings → Secrets and variables → Actions 에 OPENAI_API_KEY 가 필요하다.
+# - 리뷰 댓글은 marker로 찾아 같은 댓글을 갱신한다(다시 요청해도 댓글이 쌓이지 않음).
+name: Codex Review
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: read
+
+jobs:
+  codex-review:
+    # PR에 달린 댓글이고, `/codex-review`로 시작하며, 레포에 권한이 있는 사람이 남긴 경우만.
+    # 권한 확인이 없으면 누구나 댓글로 API 키 사용량을 쓰게 만들 수 있다.
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/codex-review') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    # 같은 PR에서 연달아 요청하면 마지막 요청만 실행한다. workflow 단위로 두면
+    # 일반 댓글(if에서 걸러지는 실행)도 진행 중인 리뷰를 취소하므로 job 단위로 둔다.
+    concurrency:
+      group: codex-review-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.issue.number }}
+      MARKER: "<!-- codex-review -->"
+      MAX_DIFF_LINES: 4000
+      REQUIRED_CHECKS: "lint test build"
+    steps:
+      - name: 요청 확인 표시 (👀)
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" \
+            -f content=eyes >/dev/null
+
+      - name: CI 결과 확인
+        id: checks
+        run: |
+          HEAD_SHA="$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}" --jq .head.sha)"
+          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+
+          # 같은 이름의 검사가 여러 번 돌았으면 가장 최근 것만 본다.
+          runs="$(gh api "repos/${{ github.repository }}/commits/${HEAD_SHA}/check-runs?per_page=100" \
+            --jq '[.check_runs[]] | sort_by(.started_at) | map({key: .name, value: .}) | from_entries')"
+
+          passed=true
+          table=""
+          for name in $REQUIRED_CHECKS; do
+            status="$(jq -r --arg n "$name" '.[$n].status // "missing"' <<<"$runs")"
+            conclusion="$(jq -r --arg n "$name" '.[$n].conclusion // ""' <<<"$runs")"
+            url="$(jq -r --arg n "$name" '.[$n].html_url // ""' <<<"$runs")"
+            if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
+              icon="✅ 통과"
+            elif [ "$status" = "completed" ]; then
+              icon="❌ ${conclusion}"; passed=false
+            elif [ "$status" = "missing" ]; then
+              icon="⚪ 실행 기록 없음"; passed=false
+            else
+              icon="⏳ ${status}"; passed=false
+            fi
+            table+="| \`${name}\` | ${icon} | ${url:+[로그](${url})} |"$'\n'
+          done
+
+          echo "passed=${passed}" >> "$GITHUB_OUTPUT"
+          {
+            echo "table<<TABLE_EOF"
+            printf '%s' "$table"
+            echo "TABLE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout (PR merge ref)
+        if: steps.checks.outputs.passed == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ env.PR_NUMBER }}/merge
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Codex 입력 만들기
+        if: steps.checks.outputs.passed == 'true'
+        run: |
+          # merge ref의 첫 부모(base)부터 비교해야, PR이 열린 뒤 base에 들어온 남의 커밋이 섞이지 않는다.
+          EX=( ':(exclude)package-lock.json' ':(exclude).env' ':(exclude).env.*' )
+          git diff --stat HEAD^1...HEAD -- . "${EX[@]}" > diff_stat.txt
+          git diff HEAD^1...HEAD -- . "${EX[@]}" > pr.diff
+          TOTAL="$(wc -l < pr.diff)"
+          if [ "$TOTAL" -gt "$MAX_DIFF_LINES" ]; then
+            head -n "$MAX_DIFF_LINES" pr.diff > pr.diff.cut
+            printf '\n... (diff가 커서 상위 %s/%s 줄만 포함)\n' "$MAX_DIFF_LINES" "$TOTAL" >> pr.diff.cut
+            mv pr.diff.cut pr.diff
+          fi
+
+          {
+            cat <<'PROMPT_EOF'
+          # 역할
+          당신은 이 저장소를 잘 아는 시니어 코드 리뷰어입니다. 아래 변경 디프를 근거로 이 PR을 한국어로 리뷰하세요.
+          자동 검증(lint·test·build)은 이미 통과한 상태이므로, 코드 품질·설계·보안·경계조건 위주로 봅니다.
+          read-only 권한으로 저장소 파일을 열어 맥락을 확인해도 됩니다.
+
+          # 출력 규칙 (반드시)
+          - 아래 5개 섹션 제목을 정확히 이 순서·문구로. 다른 상위 제목/서문/맺음말 금지.
+          - 각 섹션에 내용이 없으면 한 줄로 명시("발견된 코드 레벨 차단 이슈는 없습니다." / "없습니다.").
+          - 추측 금지. 디프에 실제로 있는 근거만, 파일경로/함수명을 구체적으로 인용. 간결하게(각 항목 한두 문장).
+
+          ## 치명적 문제
+          머지를 막아야 하는 문제(크래시, 데이터 손상, 보안 취약점, 명백한 버그). 없으면: "발견된 코드 레벨 차단 이슈는 없습니다."
+          ## 중요
+          당장 머지를 막진 않지만 곧 고쳐야 할 것. 없으면: "없습니다."
+          ## 제안
+          선택적 개선. 없으면: "없습니다."
+          ## 좋았던 점
+          이 PR에서 잘한 부분 2~4가지.
+          ## 권장 조치
+          구체적인 다음 행동. 없으면: "없습니다."
+          PROMPT_EOF
+            echo; echo "---"
+            echo "## PR 메타"
+            echo "- 저장소: ${{ github.repository }}"
+            echo "- PR: #${PR_NUMBER}"
+            echo
+            echo "## 변경 요약 (diff --stat)"
+            echo '```'; cat diff_stat.txt; echo '```'
+            echo
+            echo "## 변경 디프"
+            echo '```diff'; cat pr.diff; echo '```'
+          } > codex_input.md
+
+      - name: Codex 실행
+        if: steps.checks.outputs.passed == 'true'
+        id: codex
+        continue-on-error: true
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: codex_input.md
+          output-file: review.md
+          permission-profile: ":read-only"
+
+      - name: 리뷰 댓글 남기기
+        if: always()
+        env:
+          PASSED: ${{ steps.checks.outputs.passed }}
+          TABLE: ${{ steps.checks.outputs.table }}
+          HEAD_SHA: ${{ steps.checks.outputs.head_sha }}
+          CODEX_OUTCOME: ${{ steps.codex.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "$MARKER"
+            echo "### 🤖 Codex 리뷰 · PR #${PR_NUMBER}"
+            echo
+            echo "기준 커밋: \`${HEAD_SHA:0:7}\`"
+            echo
+            if [ "$PASSED" = "true" ]; then
+              echo "**자동 검증(lint·test·build): 통과 ✅** — 아래는 코드 리뷰입니다."
+              echo; echo "---"; echo
+              if [ -s review.md ]; then
+                cat review.md
+              else
+                echo "_Codex 실행 실패(${CODEX_OUTCOME}). \`OPENAI_API_KEY\` 시크릿과 [실행 로그](${RUN_URL})를 확인하세요._"
+              fi
+            else
+              echo "**자동 검증(lint·test·build)이 아직 통과하지 않아 Codex 리뷰를 실행하지 않았습니다.**"
+              echo
+              echo "| 검사 | 상태 | |"
+              echo "|---|---|---|"
+              printf '%s' "$TABLE"
+              echo
+              echo "검사가 모두 통과한 뒤 다시 \`/codex-review\` 댓글을 남겨주세요."
+            fi
+          } > comment.md
+
+          prev="$(gh api "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments?per_page=100" \
+            --jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"$MARKER\")))][0].id // empty")"
+          if [ -n "$prev" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/${prev}" -F body=@comment.md >/dev/null
+          else
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body-file comment.md
+          fi
